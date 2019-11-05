@@ -32,6 +32,19 @@ class App extends Component {
     }
   }
 
+  minionButtonHandler = () => {
+    let energy = this.state.energy
+    let imps = this.state.imps
+    if (energy >= 5){
+      energy -= 5
+      imps++
+      this.setState({
+        energy: energy,
+        imps: imps
+      })
+    }
+  }
+
   render () {
     // todo: make imps dynamically appear
     let minions = <MinionCard/>
@@ -55,7 +68,9 @@ class App extends Component {
               Dark Energy: {this.state.energy}
             </div>
             <div className='col my-2 text-center'>
-              {minionButton}
+              <div className="row">
+                {minionButton}
+              </div>
             </div>                    
             <div className='col my-2 text-center'>
               Imps: {this.state.imps}

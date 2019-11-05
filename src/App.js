@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCoffee } from '@fortawesome/free-solid-svg-icons'
-import MinionCard from './components/Minion/MinionCard/MinionCard'
+import MinionCard from './components/Minion/MinionCard/MinionCard';
+import MinionButton from './components/Minion/MinionButton';
 
 class App extends Component {
   constructor(props) {
@@ -36,6 +35,7 @@ class App extends Component {
   render () {
     // todo: make imps dynamically appear
     let minions = <MinionCard/>
+    let minionButton = <MinionButton />
 
     return (
       <div className="App">
@@ -55,11 +55,7 @@ class App extends Component {
               Dark Energy: {this.state.energy}
             </div>
             <div className='col my-2 text-center'>
-              <button
-                className='btn btn-primary p-4'
-                onClick={() => this.impButtonHandler()}>
-                  Summon Imp (Costs 5)
-              </button>
+              {minionButton}
             </div>                    
             <div className='col my-2 text-center'>
               Imps: {this.state.imps}

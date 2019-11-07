@@ -4,7 +4,7 @@ const actionButton = props => {
     return (
         <button
         className='col btn btn-jindigo'
-        onClick={() => this.energyButtonHandler()}>
+        onClick={props.click}>
           <span className='mx-1'>
             {props.iconImg}
           </span>

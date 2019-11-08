@@ -2,14 +2,27 @@ import React from 'react';
 
 const actionButton = props => {
     return (
+      <div className="row">
+        <div className="col-2"></div>
         <button
-        className='col btn btn-jindigo'
+        className='col-8 btn btn-jindigo'
         onClick={props.click}>
-          <span className='mx-1'>
-            {props.iconImg}
-          </span>
-          {props.name}
+          <div className="row">
+            <div className="col">
+              {props.iconImg}
+            </div>
+            <div className="col">
+              <div className="row">
+                <div className="col">{props.name}</div>
+              </div>
+              <div className="row">
+                <div className="col">{props.effect}</div>
+              </div>
+            </div>
+          </div>
         </button>
+        <div className="col-2"></div>
+      </div>
     );
 }
 

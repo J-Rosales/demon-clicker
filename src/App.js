@@ -106,7 +106,6 @@ class App extends Component {
       }
     }
 
-
     // todo: make imps dynamically appear
     let minions;
     let minionButton = <MinionButton />
@@ -138,11 +137,12 @@ class App extends Component {
                   Actions
                 </div>
               </div>
-              <div className="row align-center" style={{'overflow':'overlay'}}>
+              <div className="row align-center">
                 <ActionButton
                   iconImg = {Icons64.getIcon('fire')}
                   click= {() => this.energyButtonHandler()}
-                  name='Pillage'/>
+                  name='Pillage'
+                  effect={`${Icons64.getIcon('energy')} +1, ${Icons64.getIcon('gold')} +2`}/>
               </div>
             </div>
             <div className='col my-1 px-1 text-center'>

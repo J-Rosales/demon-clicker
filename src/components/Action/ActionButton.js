@@ -3,12 +3,11 @@ import React from 'react';
 const actionButton = props => {
     return (
       <div className="row">
-        <div className="col-2"></div>
         <button
-        className='col-8 btn btn-jindigo'
+        className='col btn btn-jindigo'
         onClick={props.click}>
-          <div className="row">
-            <div className="col">
+          <div className="row h5">
+            <div className="col-2 align-self-center">
               {props.iconImg}
             </div>
             <div className="col">
@@ -21,7 +20,6 @@ const actionButton = props => {
             </div>
           </div>
         </button>
-        <div className="col-2"></div>
       </div>
     );
 }

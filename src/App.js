@@ -5,7 +5,8 @@ import MinionButton from './components/Minion/MinionButton'
 import ActionButton from './components/Action/ActionButton'
 import StoreButton from './components/Store/StoreButton'
 import PlayerResource from './components/Player/PlayerResource'
-import Icons64 from './scripts/Icons64.jsx'
+import jsxicon from './scripts/jsxicon.jsx'
+import gameData from './scripts/gameData'
 
 /* Reminder: every drawback is an opportunity to create an unlock.
 Try the following: limit the amount of gold and energy the player
@@ -20,9 +21,9 @@ class App extends Component {
       gold: 0,
       level: 0,
       minions: {
-        imps: 0,
-        nightmares: 0,
-        skeletons: 0
+        imps : gameData.getMinionData('imp'),
+        nightmares: gameData.getMinionData('nightmare'),
+        skeletons: gameData.getMinionData('skeleton')
       }
     }
   }
@@ -63,22 +64,26 @@ class App extends Component {
   
   
   render () {
-    const goldIcon = Icons64.generate('gold')
-    const energyIcon = Icons64.generate('energy')
+    const icons = {
+      gold : jsxicon('gold'),
+      energy : jsxicon('energy'),
+      fire : jsxicon('fire'),
+      eye : jsxicon('eye')
+    }
 
     // todo: make imps dynamically appear
     let minions
     let minionButton = (
       <MinionButton
           label="Buy Imp"
-          cost={[[6, energyIcon],[8, goldIcon]]}/>
+          cost={[[1, icons.energy]]}/>
     )
     let minionCard = <MinionCard />
     let energyLabel = [
       "( ",
-      Icons64.getIcon('energy', 16),
+      icons.energy,
       " + 1, ",
-      Icons64.getIcon('gold', 16),
+      icons.gold,
       " + 1-3 )",
     ]
     let storeButtons = (
@@ -110,7 +115,7 @@ class App extends Component {
               </div>
               <div className="row align-center">
                 <ActionButton
-                  iconImg = {Icons64.getIcon('fire')}
+                  iconImg = {icons.fire}
                   click= {() => this.energyButtonHandler()}
                   name='Pillage'
                   effect={energyLabel}/>
@@ -118,17 +123,17 @@ class App extends Component {
             </div>
             <div className='col my-1 px-1 text-center'>
               <PlayerResource
-                iconImg = {Icons64.getIcon('energy')}
+                iconImg = {icons.energy}
                 name="Dark Energy"
                 amount={this.state.energy}
               />
               <PlayerResource
-                iconImg = {Icons64.getIcon('gold')}
+                iconImg = {icons.gold}
                 name="Gold"
                 amount={this.state.gold}
               />
               <PlayerResource
-                iconImg = {Icons64.getIcon('eye')}
+                iconImg = {icons.eye}
                 name="Level"
                 amount={this.state.level}
               />

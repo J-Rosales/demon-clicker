@@ -13,6 +13,9 @@ Try the following: limit the amount of gold and energy the player
 can have, this is uncommon in clickers but allow you to a: make it
 bigger with an upgrade, b: make a better currency with worse cost/benefit
 ratio but less "storage size" */
+
+/* MinionCard will be stateless since it only displays the information that 
+  other components are working on */
 class App extends Component {
   constructor(props) {
     super(props);
@@ -21,9 +24,11 @@ class App extends Component {
       gold: 0,
       level: 0,
       minions: {
-        imps : gameData.getMinionData('imp'),
-        nightmares: gameData.getMinionData('nightmare'),
-        skeletons: gameData.getMinionData('skeleton')
+        //placeholder minion data
+        imps : {
+          amount: 0,
+          cost: []
+        }
       }
     }
   }
@@ -78,14 +83,10 @@ class App extends Component {
           label="Buy Imp"
           cost={[[1, icons.energy]]}/>
     )
-    let minionCard = <MinionCard />
-    let energyLabel = [
-      "( ",
-      icons.energy,
-      " + 1, ",
-      icons.gold,
-      " + 1-3 )",
-    ]
+    let minionCard = (
+        <MinionCard />
+    )
+
     let storeButtons = (
       <div className="store-buttons text-center row">
         <StoreButton
@@ -117,8 +118,7 @@ class App extends Component {
                 <ActionButton
                   iconImg = {icons.fire}
                   click= {() => this.energyButtonHandler()}
-                  name='Pillage'
-                  effect={energyLabel}/>
+                  name='Pillage'/>
               </div>
             </div>
             <div className='col my-1 px-1 text-center'>

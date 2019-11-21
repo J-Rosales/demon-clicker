@@ -7,7 +7,7 @@ const gameData = {
     getBuyable(...gameAssets){ //returns an array of objects: minions, resources, etc with createsBuyButton enabled
         const buyableArray = []
         if (!Array.isArray(gameAssets) || !gameAssets.length) {
-            
+            console.log("TODO: return every custom asset when no parameter is given")
         }
         gameAssets.forEach((asset) => {
             //asset = 'minions'

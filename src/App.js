@@ -27,7 +27,10 @@ const IMPORTANT = "READ COMMENTS YOU DINGUS"
   constructor(props) {
     super(props);
     this.state = {
-      data : null
+      saveString : "default",
+      playerResources: {},
+      buyables: {},
+      minions: {}
     }
   }
 
@@ -43,6 +46,15 @@ const IMPORTANT = "READ COMMENTS YOU DINGUS"
 
   getProgressString = () => {
 
+  }
+
+  saveFromString = saveString => {
+    localStorage['saveFile'] = saveString
+  }
+
+  loadFromString = loadString => {
+    const appStateObject = JSON.parse(loadString)
+    this.setState(appStateObject)
   }
 
   energyButtonHandler = () => {
@@ -121,10 +133,12 @@ const IMPORTANT = "READ COMMENTS YOU DINGUS"
                 </div>
               </div>
               <div className="row align-center">
-                <ActionButton
-                  iconImg = {icons.fire}
-                  click= {() => this.energyButtonHandler()}
-                  name='Pillage'/>
+                <div className="col">  
+                  <ActionButton
+                    iconImg = {icons.fire}
+                    click= {() => this.energyButtonHandler()}
+                    name='Pillage'/>
+                </div>
               </div>
             </div>
             <div className='col my-1 px-1 text-center'>
@@ -150,7 +164,27 @@ const IMPORTANT = "READ COMMENTS YOU DINGUS"
               </div>
             </div>                    
             <div className='col my-2 text-center'>
-              Imps: {this.state.imps}
+              <div className="row">
+                <div className="col-4">
+                  <ActionButton
+                    iconImg = {icons.fire}
+                    click= {() => this.energyButtonHandler()}
+                    name='Pillage'>
+                </div>
+                <div className="col-4">
+                  <ActionButton
+                    iconImg = {icons.fire}
+                    click= {() => this.energyButtonHandler()}
+                    name='Pillage'>
+                </div>
+                <div className="col-4">
+                  <ActionButton
+                    iconImg = {icons.fire}
+                    click= {() => this.energyButtonHandler()}
+                    name='Pillage'>
+                </div>
+                </div>
+              </div>
             </div>
           </div>
           <div className='container px-0'>

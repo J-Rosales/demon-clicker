@@ -1,5 +1,7 @@
 const gameData = {
     minions: {},
+    upgrades: {},
+    achievements: {},
     playerResources: {},
     getMinionData(name){
         return this.minions[name]
@@ -43,6 +45,7 @@ const gameData = {
         this.playerResources[name] = {
             displayName: name,
             iconName: iconName,
+            amount: 0,
             defaultAmount : defaultAmount,
             min : min,
             max: max

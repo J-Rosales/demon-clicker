@@ -1,4 +1,5 @@
 import React from 'react';
+import jsxicon from '../../scripts/jsxicon';
 
 const upgradeButton = props => {
   const buttonTypeClass = props.type === "minion" ? 'col btn-jindigo' : 'col btn-darkberry'
@@ -14,7 +15,7 @@ const upgradeButton = props => {
               </div>
               <div className="row">
                 <div className="col">
-                Cost: {props.cost}
+                Cost: {props.cost} {jsxicon('currency', undefined, 'small')}
                 </div>
               </div>
           </button>

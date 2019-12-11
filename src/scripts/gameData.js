@@ -1,4 +1,6 @@
 import jsxicon from './jsxicon.jsx'
+const uuidv4 = require('uuid/v4')
+
 
 // money should have a VALUE limit
 const gameData = {
@@ -48,6 +50,7 @@ const gameData = {
         const isNewMinion = name in this ? false : true
 
         this.minions[name] = {
+            id : uuidv4(),
             displayName : displayName,
             amount      : defaultAmount,
             isBuyable   : isBuyable,
@@ -63,6 +66,7 @@ const gameData = {
             displayName = name
         } 
         this.upgrades[name] = {
+            id : uuidv4(),
             displayName : displayName,
             cost   : cost,
             type   : type, 
@@ -85,8 +89,8 @@ const gameData = {
         
         this.playerResources[name] = {
             _iconName : iconName,
-            _increasePerTick : null,
 
+            id : uuidv4(),
             displayName     : name.charAt(0).toUpperCase() + name.slice(1),
             icon            : jsxicon(iconName),
             amount          : defaultAmount,
@@ -95,12 +99,12 @@ const gameData = {
             defaultMax      : defaultMax,
             showMax         : showMax,
             hidden          : hidden,
-            isMinion        : isMinion
+            isMinion        : isMinion,
+            increasePerTick : 0
         }
         return isNewResource
     }
 }
-
 
 //initializing player resources
 gameData.addPlayerResource('level', false, 99, false, false, 'eye')
@@ -122,16 +126,16 @@ function newResourceGroup(groupObject){
 }
 
 const costs = {
-    imp : newResourceGroup({ energy : 5}),
-    ghost : newResourceGroup({ energy : 10, currency : 5}),
-    devil : newResourceGroup({ energy : 15, currency : 10}),
+    imp       : newResourceGroup({ energy : 5}),
+    ghost     : newResourceGroup({ energy : 10, currency : 5}),
+    devil     : newResourceGroup({ energy : 15, currency : 10}),
     nightmare : newResourceGroup({ energy : 20, currency : 15})
 }
 
 const effect = {
-    imp : newResourceGroup({ energy : 0.1 }),
-    ghost : newResourceGroup({ energy : 0.2, currency : 0.01}),
-    devil : newResourceGroup({ energy : 0.3, currency : 0.05}),
+    imp       : newResourceGroup({ energy : 0.1 }),
+    ghost     : newResourceGroup({ energy : 0.2, currency : 0.01}),
+    devil     : newResourceGroup({ energy : 0.3, currency : 0.05}),
     nightmare : newResourceGroup({ energy : 0.1})
 }
 

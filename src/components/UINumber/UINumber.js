@@ -1,24 +1,50 @@
 import React from 'react';
-
+import colors from './../../scripts/colors.js'
+import jsxicon from '../../scripts/jsxicon.jsx';
 const UINumber = props => {
-    const themeColors = {
-        bone     : '#E3DAC9',
-        beige    : '#F5F5DC',
-        gold: '#A57C00',
-        darkcandy: '#A40000',
-        midnight : '#18184E',
-        darkberry: '#872657',
-        jindigo  : '#264348'
+    const suffixes = {
+        currencyNames : ['copper', 'silver', 'gold', 'electrum', 'platinum', 'palladium', 'draconium'],
+        powers : ['', 'K', 'M', 'B', 'T', 'Q'],
+        value : props.value.toFixed(0),
+        currency : () => {
+            const scale = 100
+            const power = Math.log10(scale)
+            for (const i = 0; i < power; i++){
+                
+            }
+            while (this.value > 100){}
+            return (
+                <>
+                (value / Math.pow(scale, power)) jsxicon(currencyNames[i])
+                </>
+            )
+        },
+        number : () => {
+            const scale = 1000
+            const power = Math.floor(Math.log(this.value) / Math.log(scale))
+            const i = 0
+            return (
+                <>
+                {(this.value / Math.pow(scale, power))} {this.currencyNames[i]}
+                </>
+            )
+        },
+        default: () => {
+            return props.value
+        }
     }
 
-    const warningThreshold = 0.9
-    let numberColor;
+    if (props.value > 100){
+
+    }
+        const warningThreshold = 0.9
+        let numberColor;
     if (props.value < props.max * warningThreshold){
-        numberColor = themeColors.midnight
+        numberColor = colors.midnight
     }else if (props.value >= props.max * warningThreshold && props.value < props.max){
-        numberColor = themeColors.gold
+        numberColor = colors.gold
     } else if (props.value === props.max){
-        numberColor = themeColors.darkcandy
+        numberColor = colors.darkcandy
     }
     
       return (

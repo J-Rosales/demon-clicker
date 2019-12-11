@@ -1,32 +1,25 @@
 import React from 'react'
 import jsxicon from './../../scripts/jsxicon.jsx'
+const uuidv4 = require('uuid/v4')
 
 const minionButton = props => {
+    const costLabel = Object.keys(props.cost).map(key => {
+      const id = uuidv4()
+      return (
+        <span key = {id} className="px-1">
+          {props.cost[key]} {" "} {jsxicon(key)}
+        </span>
+    )})
 
-    const costLabel = []
-    for (const costProp in props.cost){
-      const icon = jsxicon(costProp)
-      const amount = props.cost[costProp]
-      costLabel.push(
-        amount,
-        <span
-          key = {"minionButtonId" + new Date().getTime()}
-          className="px-1">{icon}</span>
-        )
-      /*MAKE THIS A FOR LOOP TO HAVE A KEY JSX TAG
-      if im not at the last iteration:
-       add a comma*/
-    }
-    
     return (
       <div className="col">
         <button 
             className='col btn-darkberry'
             onClick={props.click}>
-          {props.label} ( Cost: {costLabel} )
+          {props.label} ( Cost: {costLabel})
         </button>
       </div>
-    );
+    );  
 }
 
 export default minionButton

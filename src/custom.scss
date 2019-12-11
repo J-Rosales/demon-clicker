@@ -20,5 +20,12 @@ $theme-colors: (
   jindigo: $jindigo
 );
 
+.headerrow {
+  background-color : $beige;
+}
+  .headerrow:hover {
+    background-color : scale-color($beige, $lightness: -15%, $saturation: -40%);
+  }
+
 // Import Bootstrap and its default variables
 @import '~bootstrap/scss/bootstrap.scss';

@@ -6,14 +6,16 @@ import ActionButton from './components/Action/ActionButton'
 import PlayerResource from './components/Player/PlayerResource'
 import jsxicon from './scripts/jsxicon.jsx'
 import gameData from './scripts/gameData'
+import UIPanel from './components/UIPanel/UIPanel'
+
+//import { listenerCount } from 'cluster'
 //import { updateExpression } from '@babel/types'
-
-/* MinionCard will be stateless since it only displays the information that 
-  other components are working on.
-
-  State should be changed whenever you would otherwise have mutability.
-  Whenever something has to be redrawn (rerendered) since otherwise it
-  would have to reload the entire page. */
+/*
+- IMPLEMENT ESTATE
+- Implement currency into UINumber, by having a "hasIcon" option, as well as returning
+  different currency icons
+- implement time
+*/
 
 class App extends Component {
   constructor(props) {
@@ -21,6 +23,7 @@ class App extends Component {
     this.state = {
       saveString     : "default",
       time           : 0,
+      panels         : ['main', 'estate', 'shop', 'upgrades', 'summoning'],
       //actions        : gameData.getGameAsset('actions'), later
       minions        : gameData.getGameAsset('minions'),
       upgrades       : gameData.getGameAsset('upgrades'),
@@ -31,7 +34,7 @@ class App extends Component {
       houseIcon      : jsxicon('house', '#18184E', 'small'),
       timer          : null
 
-    };
+    }
   }
 
   componentDidMount = () => {
@@ -53,6 +56,15 @@ class App extends Component {
            }
 
           } 
+        } else { // use a handler so this only changes when necessary
+          const resourceArray = []
+          for (const minionName in minions){
+            if (minions[minionName].effect.hasOwnProperty(playerResource)){
+              resourceArray.push(minions[minionName].effect[playerResource] * playerResources[minionName].amount)
+            }
+          }
+          const increaseSum = resourceArray.reduce((total, element) => total + (element) , 0)
+          playerResources[playerResource].increasePerTick = increaseSum
         }
       }
       return {time}
@@ -140,6 +152,7 @@ class App extends Component {
           }
           playerResources.currency.amount -= upgrade.cost
           playerResources[upgrade.value].hidden = false
+          upgrade.hidden = true
 
           newState = {
             ...prevState,
@@ -176,197 +189,157 @@ class App extends Component {
     }
   }
 
+  dragButtonHandler = () => {
+
+  }
+
+  viewButtonHandler = () => {
+
+  }
+
   render () {
-    // todo: make imps dynamically appear
+  
     const playerResourceNames = Object.getOwnPropertyNames(this.state.playerResources)
     const playerResourcePanel = (
       <>
         {
-          playerResourceNames.map((name, index) => {
-          const resource = this.state.playerResources[name]
-          let effectObject = ""
-          if (resource.isMinion){
-            effectObject = this.state.minions[name].effect
-          }
-
-          return resource.hidden ? null : (
-            <PlayerResource
-            key = {index}
-            iconImg = {resource.icon}
-            name = {resource.displayName}
-            amount = {resource.amount}
-            max = {resource.max}
-            isMinion = {resource.isMinion}
-            effectObject = {effectObject}
-            />
+          playerResourceNames.map(name => {
+            const resource = this.state.playerResources[name]
+            let effectObject = ""
+            let increasePerTick = resource.increasePerTick
+            if (resource.isMinion){
+              effectObject = this.state.minions[name].effect
+              increasePerTick = undefined
+            }
+            return resource.hidden ? null : (
+              <PlayerResource
+                key = {resource.id} 
+                iconImg = {resource.icon}
+                name = {resource.displayName}
+                amount = {resource.amount}
+                increasePerTick = {increasePerTick}
+                max = {resource.max}
+                isMinion = {resource.isMinion}
+                effectObject = {effectObject}
+              />
           )})}
       </>
     )
     
     const upgradeNames = Object.getOwnPropertyNames(this.state.upgrades)
-    const upgradeButtons = (
-      <>
-        {upgradeNames.map((name, index) => {
-          const resource = this.state.upgrades[name]
-          return resource.hidden ? null : (
-            <UpgradeButton
-              key = {index}
-              click = {() => this.upgradeButtonHandler(resource)}
-              productName = {resource.displayName}
-              cost = {resource.cost}
-              type = {resource.type}
-            />
-          )})}
-      </>
-    )
-
+    const upgradeButtons = upgradeNames.map(name => {
+      const upgrade = this.state.upgrades[name]
+      return upgrade.hidden ? null : (
+        <UpgradeButton
+          key = {upgrade.id}
+          click = {() => this.upgradeButtonHandler(upgrade)}
+          productName = {upgrade.displayName}
+          cost = {upgrade.cost}
+          type = {upgrade.type} />
+      )})
 
     const minionNames = Object.getOwnPropertyNames(this.state.minions)
-    const minionButtons = (
+    const unlockedMinions = minionNames.filter((minion) => {
+      return this.state.minions[minion].unlocked
+    })
+
+    const minionButtons = unlockedMinions.map(name => {
+      const minion = this.state.minions[name]
+      return (
+      <MinionButton
+        key = {minion.id}
+        cost = {minion.cost}
+        click = {() => this.minionButtonHandler(minion, name)}
+        label = {minion.displayName} />
+      )})
+
+    const shopButtons = (
+      <div className="col py-4">
+        {"placeholder"}
+      </div> 
+    )
+
+    const informationPanel = (
+      <></>
+    )
+    const mainPanels = (
       <>
-        {minionNames.map((name, index) => {
-          const resource = this.state.minions[name]
-          return resource.unlocked ? (
-            <MinionButton
-              key = {index}
-              cost = {resource.cost}
-              click = {() => this.minionButtonHandler(resource, name)}
-              label = {resource.displayName}
-            />
-          ) : null
-        })}
+        <div className='col-2 text-center'>
+          <UIPanel header="Actions">
+            <div className="col">        
+              <ActionButton
+                  iconImg = {this.state.fireIcon}
+                  click= {() => this.energyButtonHandler()}
+                  name='Pillage'/>
+            </div>
+          </UIPanel>
+        </div>
+        <div className='col-5 text-center'>
+          <UIPanel header="Resources">
+            {playerResourcePanel}
+          </UIPanel>
+        </div>
+        <div className='col-5 text-center'>
+          <UIPanel header="Information">
+            <p className="text-justify">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+              sed do eiusmod tempor incididunt ut labore et dolore magna
+              aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+              ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+            </p>
+          </UIPanel>  
+        </div>
       </>
     )
 
-     
+    const estatePanel = (
+      <>
+        {this.state.houseIcon} {" "}
+        Estate goes here
+      </>
+    )
 
+    const panelData = {
+      main      : {
+        header: 'Main Panel',
+        content: mainPanels
+      },
+      estate    : {
+        header: 'Estate',
+        content: estatePanel
+      },
+      shop      : {
+        header: 'Shop',
+        content: shopButtons
+      },
+      upgrades  : {
+        header: 'Upgrades',
+        content: upgradeButtons
+      },
+      summoning : {
+        header: 'Summoning',
+        content: minionButtons
+      }
+    }
+    
+    const gamePanels = this.state.panels.map(function(key) {
+      return (
+        <div className='container w-80 bg-light'>
+          <UIPanel header={panelData[key].header}
+              dragButtonClick={() => this.dragButtonHandler(key)}
+              viewButtonClick={() => this.viewButtonHandler(key)}>
+            {panelData[key].content}
+          </UIPanel>
+        </div>
+      )
+    })
+    //this is for dragging
     return (
       <div className="App">
         <div className='container align-bottom'>
           <h1 className='mt-5'>Demon Clicker v0.1.0</h1>
         </div>
-        <div className='container w-80 py-1 bg-light border-bottom'>
-          <div className='row'>
-            <div className="col">
-              <button className="btn float-left">
-                {"jsxicon('vdrag')"}
-              </button>
-              Main Panel (t: {this.state.time})
-              <button 
-                  className="btn float-right"
-                  onClick={() => this.viewButtonHandler()}>
-                {"jsxicon('eye')"}
-              </button>
-            </div>
-          </div>
-          <div className='row'>
-            <div className='col-2 m-2 text-center '>
-              <div className="row">
-                <div className="col h5">
-                  Actions
-                </div>
-              </div>
-              <div className="row align-center">
-                <div className="col">  
-                  <ActionButton
-                    iconImg = {this.state.fireIcon}
-                    click= {() => this.energyButtonHandler()}
-                    name='Pillage'/>
-                </div>
-              </div>
-            </div>
-            <div className='col my-1 px-1 text-center'>
-              <div className="row">
-                <div className="col h5">Resources</div>
-              </div>
-              <div className="row">
-                <div className="col">{playerResourcePanel}</div>
-              </div>
-            </div>
-            <div className='col border my-2 text-center'>
-            <div className="row">
-                <div className="col h5">
-                  Information
-                </div>
-              </div>
-              <div className="row">
-                <div className="col">
-                  <p className="text-justify">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                    sed do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                    ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-                  </p>
-                </div>
-              </div>              
-            </div>
-          </div>
-        </div>
-        <div className='container w-80 py-1 bg-light'>
-          <div className="row">
-            <div className="col">Estate</div>
-          </div>
-          <div className="row py-4">
-            <div className="col">
-              {this.state.houseIcon} {" "}
-              Estate goes here
-            </div>
-        </div>
-        </div>        
-        <div className='container w-80 py-1 bg-light'>
-          <div className="row">
-            <div className="col">Shop</div>
-          </div>
-          <div className='row'>
-            <div className="col-2">
-              <button className="btn btn-primary w-100">
-                {"[TEST ICON]"}
-                data
-              </button>
-            </div>
-            <div className="col-2">
-              <button className="btn btn-primary w-100">
-                data
-              </button>
-            </div>
-            <div className="col-2">
-              <button className="btn btn-primary w-100">
-                data
-              </button>
-            </div>
-            <div className="col-2">
-              <button className="btn btn-primary w-100">
-                data
-              </button>
-            </div>
-            <div className="col-2">
-              <button className="btn btn-primary w-100">
-                data
-              </button>
-            </div>
-            <div className="col-2">
-              <button className="btn btn-primary w-100">
-                data
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className='container w-80 py-1 bg-light'>
-          <div className="row">
-            <div className="col">Upgrades</div>
-          </div>
-          <div className='row'>
-            {upgradeButtons}            
-          </div>
-        </div>
-        <div className='container w-80 py-1 bg-light'>
-          <div className="row">
-            <div className="col">Summoning</div>
-          </div>
-          <div className='row'>
-            {minionButtons}                  
-          </div>
-        </div>     
+        {gamePanels}
       </div>
     )
   }

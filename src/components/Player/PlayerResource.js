@@ -1,31 +1,34 @@
-import React from 'react';
-import jsxicon from '../../scripts/jsxicon';
-import UINumber from '../UINumber/UINumber';
+import React from 'react'
+import jsxicon from '../../scripts/jsxicon'
+import UINumber from '../UINumber/UINumber'
+const uuidv4 = require('uuid/v4')
 
 const playerResource = props => {
-
-    const effectDisplay = []
-    for (const resourceName in props.effectObject){
-        const increasePerSecond = props.amount * props.effectObject[resourceName] * 10
-        const percentageofTotal = 5
-        effectDisplay.push(
-          <small key ={"effectId" + new Date().getTime()}> {/* please for the love of god fix this */}
-            {jsxicon(resourceName)} + {increasePerSecond.toFixed(2)} /s ({percentageofTotal.toFixed(2)}%)
-          </small>
+    const increaseLabel = props.isMinion ? null : `( + ${(props.increasePerTick * 10).toFixed(2)})`
+    const effectLabel = Object.keys(props.effectObject).map((key, index) => {
+        const id = uuidv4()
+        const icon = jsxicon(key, undefined, "small")
+        const gainPerSecond = (props.amount * props.effectObject[key] * 10).toFixed(2)
+        const percentageofTotal = props.amount.toFixed(2)
+        return (
+            <small key={id} className="clearfix">
+                {icon} + {gainPerSecond} /s ({percentageofTotal}%)
+            </small> 
         )
-    }
+    })
+    
     const dataColumns = props.isMinion ? (
         <>
             <div className="col-2 p-1 border-right-0 border border-jindigo">
                 <UINumber value={props.amount} />
             </div>
-            <div className="col-5 p-1 border border-jindigo rounded-right">
-                {effectDisplay}
+            <div className="col-4 p-1 border border-jindigo rounded-right">
+                {effectLabel}
             </div>
         </>
     ) : (
         <>
-            <div className="col-7 p-1 border border-jindigo rounded-right">
+            <div className="col-6 p-1 border border-jindigo rounded-right">
                 <UINumber
                     value={props.amount}
                     max = {props.max}/>
@@ -35,11 +38,11 @@ const playerResource = props => {
 
     return (
         <div className="row m-1">
-            <div className="col-5 p-1 border border-jindigo rounded-left border-right-0 text-left align-middle">
+            <div className="col-6 p-1 border border-jindigo rounded-left border-right-0 text-left align-middle">
                 <span className='ml-1 mr-2'>
                     {props.iconImg}
                 </span>
-                {props.name}
+                {props.name} {increaseLabel}
             </div>
             {dataColumns}
         </div>

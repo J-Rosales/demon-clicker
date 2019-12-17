@@ -106,52 +106,71 @@ const gameData = {
     }
 }
 
+const camelToWords = string => {
+    return string.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+}
+const pascalToWords = string => {
+    const camel = camelToWords(string)
+    return camel.charAt(0).toUpperCase() + camel.slice(1)
+}
+
+const create = {
+    minion : (options) => {
+        if (!options.hasOwnProperty('displayName')) { options.displayName = camelToWords(options.name) }
+        if (!options.hasOwnProperty('defaultMax')) { options.defaultMax = 10 }
+        if (!options.hasOwnProperty('upgradeSuffix')) { options.upgradeSuffix = "Rune" }
+        gameData.addPlayerResource(options.name, true, options.defaultMax, true, true, options.name)
+        gameData.addMinion(options.name, options.displayName, options.minionCost, options.effectObject, 0, true, false, false)
+        gameData.addUpgrade(options.name, pascalToWords(options.displayName + options.upgradeSuffix), options.upgradeCost, 'minion', options.name)
+    }
+}
+
 //initializing player resources
 gameData.addPlayerResource('level', false, 99, false, false, 'eye')
 gameData.addPlayerResource('energy')
 gameData.addPlayerResource('currency')
 
-gameData.addPlayerResource('imp', true, 10, true, true, undefined)
-gameData.addPlayerResource('ghost', true, 10, true, true, undefined)
-gameData.addPlayerResource('devil', true, 10, true, true, undefined)
-gameData.addPlayerResource('nightmare', true, 10, true, true, undefined)
+gameData.addUpgrade('houseSize', 'The Big House :)', 10, 'estate', {currency: 50, energy: 50})
 
-function newResourceGroup(groupObject){
-    const resourceExists = (resourceName) => gameData.playerResources.hasOwnProperty(resourceName)
-    if (Object.keys(groupObject).every(resourceExists)){
-        return groupObject
-    } else {
-        console.log(groupObject, 'resourceGroup key is invalid')
-    }
-}
+create.minion({
+    name : 'imp',
+    minionCost  : {energy : 5},
+    upgradeCost : 5,
+    effectObject: {energy : 0.1},
+    description: "wenk"
+})
 
-const costs = {
-    imp       : newResourceGroup({ energy : 5}),
-    ghost     : newResourceGroup({ energy : 10, currency : 5}),
-    devil     : newResourceGroup({ energy : 15, currency : 10}),
-    nightmare : newResourceGroup({ energy : 20, currency : 15})
-}
+create.minion({
+    name : 'zombie',
+    minionCost  : {energy : 5},
+    upgradeCost : 5,
+    effectObject: {energy : 0.2},
+    description: "wenk"
+})
 
-const effect = {
-    imp       : newResourceGroup({ energy : 0.1 }),
-    ghost     : newResourceGroup({ energy : 0.2, currency : 0.01}),
-    devil     : newResourceGroup({ energy : 0.3, currency : 0.05}),
-    nightmare : newResourceGroup({ energy : 0.1})
-}
+create.minion({
+    name : 'skeleton',
+    minionCost  : {energy : 5},
+    upgradeCost : 5,
+    effectObject: {energy : 0.3},
+    description: "wenk"
+})
 
-/* todo: search for the cost/effect object using cost['minionName']*/
-gameData.addMinion('imp', 'Imp', costs.imp, effect.imp)
-gameData.addMinion('ghost', 'Ghost', costs.ghost, effect.ghost)
-gameData.addMinion('devil', 'Devil', costs.devil, effect.devil)
-gameData.addMinion('nightmare', 'Nightmare', costs.nightmare, effect.nightmare)
+create.minion({
+    name : 'lawyer',
+    upgradeSuffix: "Contract",
+    minionCost  : {energy : 5},
+    upgradeCost : 5,
+    effectObject: {energy : 0.1},
+    description: "wenk"
+})
 
-gameData.addUpgrade('impRune', 'Imp Rune', 5, 'minion', 'imp')
-gameData.addUpgrade('ghostRune', 'Ghost Rune', 10, 'minion', 'ghost')
-gameData.addUpgrade('devilRune', 'Devil Rune', 15, 'minion', 'devil')
-gameData.addUpgrade('nightmareRune', 'Nightmare Rune', 20, 'minion', 'nightmare')
-
-gameData.addUpgrade('houseSize', 'The Big House :)', 10, 'estate', {currency: 50})
-/* minions by default are buyable and startunlocked for each minion
-   make a buyable glyph, glyphs can be unlocked */
+create.minion({
+    name : 'devil',
+    minionCost  : {energy : 5},
+    upgradeCost : 5,
+    effectObject: {energy : 0.1},
+    description: "wenk"
+})
 
 export default gameData;

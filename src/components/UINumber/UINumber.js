@@ -1,8 +1,7 @@
 import React from 'react';
 import colors from './../../scripts/colors.js'
-import jsxicon from '../../scripts/jsxicon.jsx';
 const UINumber = props => {
-    const suffixes = {
+    /*const suffixes = {
         currencyNames : ['copper', 'silver', 'gold', 'electrum', 'platinum', 'palladium', 'draconium'],
         powers : ['', 'K', 'M', 'B', 'T', 'Q'],
         value : props.value.toFixed(0),
@@ -32,7 +31,7 @@ const UINumber = props => {
         default: () => {
             return props.value
         }
-    }
+    }*/
 
     if (props.value > 100){
 

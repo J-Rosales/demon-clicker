@@ -1,0 +1,21 @@
+.hiderow-enter {
+    max-height: 0px;
+    opacity: 0;
+  }
+  
+  .hiderow-enter.hiderow-enter-active {
+    max-height: 400px;
+    opacity: 1;
+    transition: max-height 250ms ease-in, opacity 300ms 100ms linear;
+  }
+  
+  .hiderow-leave {
+    max-height: 400px;
+    opacity: 1;
+  }
+  
+  .hiderow-leave.hiderow-leave-active {
+    max-height: 0px;
+    opacity: 0;
+    transition: max-height 300ms 100ms ease-out, opacity 250ms linear,;
+  }

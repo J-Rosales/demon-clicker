@@ -4,6 +4,9 @@ import UINumber from '../UINumber/UINumber'
 const uuidv4 = require('uuid/v4')
 
 const playerResource = props => {
+    if (props.name === "Energy"){
+        console.log(props.amount)
+    }
     const increaseLabel = props.isMinion ? null : `( + ${(props.increasePerTick * 10).toFixed(2)})`
     const effectLabel = Object.keys(props.effectObject).map((key, index) => {
         const id = uuidv4()
@@ -30,7 +33,7 @@ const playerResource = props => {
         <>
             <div className="col-6 p-1 border border-jindigo rounded-right">
                 <UINumber
-                    value={props.amount}
+                    value={props.amount} 
                     max = {props.max}/>
             </div>
         </>        

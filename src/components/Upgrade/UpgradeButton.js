@@ -3,11 +3,13 @@ import jsxicon from '../../scripts/jsxicon';
 
 const upgradeButton = props => {
   const buttonTypeClass = props.type === "minion" ? 'col btn-jindigo' : 'col btn-darkberry'
-  
   return (
       <div className="col">
           <button className={buttonTypeClass}
             onClick={props.click}>
+              <div className="row">
+                <div className="col">{jsxicon(props.name + "Rune")}</div>
+              </div>
               <div className="row">
                 <div className="col">
                   {props.productName}

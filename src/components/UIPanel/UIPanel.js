@@ -6,12 +6,6 @@ import ReactCSSTransitionGroup from 'react-addons-css-transition-group'
 const uuidv4 = require('uuid/v4')
 
 class UIPanel extends Component {
-    static getDerivedStateFromProps(props, state) {
-      if (props.data !== state.data) {
-        return { data: props.data }
-      }
-      return null
-    }
     constructor(props){
         super(props)
         this.state = {
@@ -27,6 +21,12 @@ class UIPanel extends Component {
             }
         }
     }
+
+    componentDidUpdate(prevProps) {
+        if (this.props.children !== prevProps.children && !this.state.hidden) {
+            this.setState({content: this.props.children});
+        }
+      }
 
     dragButtonHandler = () => {
 

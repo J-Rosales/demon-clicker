@@ -1,80 +1,77 @@
 import React, { Component } from 'react'
+import { Container, Row, Col, Button, ButtonGroup, Badge } from 'reactstrap';
 //import ReactDOM from 'react-dom'
 import './App.css'
 import MinionButton from './components/Minion/MinionButton'
 import UpgradeButton from './components/Upgrade/UpgradeButton'
-import ActionButton from './components/Action/ActionButton'
 import PlayerResource from './components/Player/PlayerResource'
 import jsxicon from './scripts/jsxicon.jsx'
 import gameData from './scripts/gameData'
 import UIPanel from './components/UIPanel/UIPanel'
+import UINumber from './components/UINumber/UINumber'
+import {lzw_encode, lzw_decode} from './scripts/lzwCompress'
+import colors from './scripts/colors';
 const uuidv4 = require('uuid/v4')
 
 //import { listenerCount } from 'cluster'
 //import { updateExpression } from '@babel/types'
-/*IMPLEMENT ESTATE
-  Implement currency into UINumber, by having a "hasIcon" option, as well as returning
-    different currency icons: A [currency N icon], B [currency N-1 icon]... X [currency n-j icon]
-  implement time
-  implement hide/how as return (<app div> this.state.visible && jsxElements} </app div>)
+/*Implement currency into UINumber, by having a "hasIcon" option, as well as returning
   fix playerResourcesPanel mapping for return shorthand
-
-
-  check whether or not you need to pass data as a state property to use getDerivedStateFromProps(props, state) 
-  otherwise research how to derive a state without unwrapping the react component (YouTube)
-  */
+  make time into object
+*/
 
 class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
+      infoPanel      : 'Welcome to Demon Clicker. You may start by pillagig to get some energy and currency, to then purchase runes, which allow you to summon minions.',
+      loadInputValue : '',
+      lastSave       : null,
       saveString     : "default",
       time           : 0,
       panels         : {
-        main: {
-          index  : 0,
-          id     : uuidv4(),
-          header : 'Main Panel',
-        },
-        estate: {
-          index  : 1,
-          id     : uuidv4(),
-          header : 'Estate',
-        },
-        shop : {
-          index  : 2,
-          id     : uuidv4(),
-          header : 'Shop',
-        },
-        upgrades : {
-          index  : 3,
-          id     : uuidv4(),
-          header : 'Upgrades',
-        },
-        summoning: {
-          index  : 4,
-          id     : uuidv4(),
-          header : 'Summoning',
-        }
+        main      : { index  : 0, id : uuidv4(),  header : 'Main Panel' },
+        estate    : { index  : 1, id : uuidv4(),  header : 'Estate'},
+        shop      : { index  : 2, id : uuidv4(),  header : 'Shop'},
+        upgrades  : { index  : 3, id : uuidv4(),  header : 'Upgrades'},
+        summoning : { index  : 4, id : uuidv4(),  header : 'Summoning'}
+      },
+      saveSlots      : {
+        one   : {active : false, name : null, saveString : null},
+        two   : {active : false, name : null, saveString : null},
+        three : {active : false, name : null, saveString : null}
       },
       //actions        : gameData.getGameAsset('actions'), later
       minions        : gameData.getGameAsset('minions'),
       upgrades       : gameData.getGameAsset('upgrades'),
-      achievements   : gameData.getGameAsset('achievements'),
+      //achievements   : gameData.getGameAsset('achievements'),
       playerResources: gameData.getGameAsset('playerResources'),
-      buyables       : gameData.getGameAsset('buyables'),
-      fireIcon       : jsxicon('fire'),
-      houseIcon      : jsxicon('house', '#18184E', 'small'),
-      timer          : null
+      estates        : gameData.getGameAsset('estate'),
+      fireName       : 'fire',
+      timeName       : 'dawn',
+      timeClock      : '02:10',
+      currentEstate  : gameData.estate.shack, 
+      timer          : null,
+      nextEstateName : gameData.estate.house.displayName,
+      nextEstateCost : gameData.estate.house.cost
     }
   }
 
   componentDidMount = () => {
-    this.timer = setInterval(() => this.setState(prevState => {
-      const time = this.state.time + 1
+    this.timer = setInterval(() => this.timeUpdate(), 100)
+  }
+
+  componentWillUnmount = () => {
+    clearInterval(this.timer)
+  }
+
+  timeUpdate = () => {
+    this.setState(prevState => {
+      const time = prevState.time++
       const playerResources = {...prevState.playerResources}
       const minions = {...prevState.minions}
-      
+      const timeClock = prevState.timeClock
+      let newState = {}
       for(const playerResource in playerResources){
         if (playerResources[playerResource].isMinion){
           for (const resourceName in minions[playerResource].effect){
@@ -99,8 +96,41 @@ class App extends Component {
           playerResources[playerResource].increasePerTick = increaseSum
         }
       }
-      return {time}
-      }), 100)
+
+      const timeOfDay = {
+        dawn : 6,
+        noon : 12,
+        dusk : 6,
+        night: 8,
+      }
+
+      const tickTime = 6
+      let [hours, minutes] = timeClock.split(":")
+      minutes = parseInt(minutes, 10) + 1
+      hours = parseInt(hours, 10)
+      
+      if (minutes >= 60){
+        minutes = 0
+        if (hours === 23){
+          hours = 0
+        } else {
+          hours++
+        }
+      } else {
+        minutes+= tickTime
+      }
+      minutes = ("0" + minutes.toString()).slice(-2)
+      hours = ("0" + hours.toString()).slice(-2)
+
+      newState = {
+        ...prevState,
+        playerResources : playerResources,
+        time : time,
+        timeClock: "fuck"
+      }
+
+      return { newState }
+    })
   }
 
   getProgressString = () => {}
@@ -121,15 +151,17 @@ class App extends Component {
         playerResources[key] = prevState.playerResources[key]
       }
       playerResources.energy.amount += 1
-      playerResources.currency.amount += Math.floor(Math.random() * 2); 
+      playerResources.currency.amount += Math.floor(Math.random() * 2)
+      if (playerResources.currency.amount > this.state.currentEstate.limit){
+        playerResources.currency.amount = this.state.currentEstate.limit
+      }
       return { playerResources }
-    })
-  }
+    })}
 
   minionButtonHandler = (minionObject, minionName) => {
     const costsArray = Object.keys(minionObject.cost).map(function(key) {
       return [key, minionObject.cost[key]];
-    });
+    })
     const hasResource = (currentCost) => this.state.playerResources[currentCost[0]].amount >= currentCost[1]
     if (costsArray.every(hasResource)){
       this.setState(prevState => {
@@ -157,24 +189,68 @@ class App extends Component {
     }
   }
   
-  upgradeButtonHandler = (upgrade) => {
+  estateButtonHandler = () => {
     const currency = this.state.playerResources.currency.amount
+    if (currency >= this.state.nextEstateCost){
+      const estateArray = Object.keys(this.state.estates)
+      for (let i = 0; i < estateArray.length; i++){
+        if (this.state.estates[estateArray[i]].active){
+          const currentEstate = {...this.state.estates[estateArray[i + 1]]}
+          const nextEstate = {...this.state.estates[estateArray[i + 2]]}
 
+          this.setState(prevState => {
+            let newState = {}
+            
+            const estates = { ...prevState.estates}
+            estates[estateArray[i]].active = false
+            estates[estateArray[i + 1]].active = true
+          
+            const playerResources = {
+            ...prevState.playerResources,
+              currency : {
+                ...prevState.playerResources.currency,
+                amount: prevState.playerResources.currency.amount - currentEstate.cost,
+                max : estates[estateArray[i + 1]].limit
+              }
+            }
+            
+            newState = {
+              ...prevState,
+              estates         : estates,
+              playerResources : playerResources,
+              nextEstateCost  : nextEstate.cost,
+              nextEstateName  : nextEstate.displayName,
+              currentEstate   : currentEstate
+            }
+          return (newState)
+          })
+          break
+        }
+      }
+    }
+  }
+
+  upgradeButtonHandler = upgrade => {
+    const currency = this.state.playerResources.currency.amount
     if (upgrade.type === 'minion') {
       if (currency >= upgrade.cost && this.state.minions[upgrade.value].unlocked === false) {
         this.setState(prevState => {
           let newState = {}
           const minions = {...prevState.minions}
           const playerResources = {...prevState.playerResources}
-          
-          for (let key in prevState.minions) {
-            minions[key] = prevState.minions[key]
-          }
+          const upgrades = {...prevState.upgrades}
           minions[upgrade.value].unlocked = true
-
-          for (let key in prevState.playerResources) {
-            playerResources[key] = prevState.playerResources[key]
+          
+          //unlock upgrades that concern unlocked minion(s)
+          for (const prevStateUpgrade in prevState.upgrades){
+            if (upgrades[prevStateUpgrade].type === 'buff'){
+              if (upgrades[prevStateUpgrade].value.hasOwnProperty(upgrade.value)){
+                
+                upgrades[prevStateUpgrade].hidden = false
+              }
+            }
           }
+
           playerResources.currency.amount -= upgrade.cost
           playerResources[upgrade.value].hidden = false
           upgrade.hidden = true
@@ -182,9 +258,9 @@ class App extends Component {
           newState = {
             ...prevState,
             minions: minions,
+            upgrades: upgrades,
             playerResources: playerResources
           }
-
           return {newState}
         })
       }
@@ -210,6 +286,42 @@ class App extends Component {
           return {newState}
         })
       }
+    } else if (upgrade.type === 'buff'){
+      /*gameData.addUpgrade('sharpClaws', undefined, 5, 'buff', {
+        imp: { effectObject : { energy : 0.2 } } })*/
+        if (currency >= upgrade.cost){
+          this.setState(prevState => {
+            let newState = {}
+            const minions = {...prevState.minions}
+            const playerResources = {...prevState.playerResources}
+            
+            playerResources.currency.amount -= upgrade.cost          
+            upgrade.hidden = true
+            
+            // actual effect
+            for (const minion in upgrade.value){
+              for (const property in minions[minion]){
+                if (property === 'effect'){
+                  for(const resource in upgrade.value[minion].effectObject){
+                    minions[minion][property][resource] += upgrade.value[minion].effectObject[resource]
+                  }
+                }
+              }
+            }
+
+            for (const resourceName in upgrade.value){
+              playerResources[resourceName].max = upgrade.value[resourceName]
+            }
+  
+            newState = {
+              ...prevState,
+              minions: minions,
+              playerResources: playerResources
+            }
+  
+            return {newState}
+          })
+        }
     }
   }
 
@@ -219,27 +331,78 @@ class App extends Component {
   viewButtonHandler = () => {
   }
 
+  loadInputHandler = (e) => {
+    this.setState({
+      loadInputValue: e.target.value
+    });
+  }
+
+  saveButtonHandler = () => {
+    const date = new Date()
+    this.setState({
+      infoPanel : `Game Saved. Date: ${date.toLocaleString()} id: ${(Math.random() * 100).toFixed(3)}.`,
+      lastSave  : date.toLocaleString(),
+    }, () => {
+      const assetArrays = ["minions", "upgrades", "playerResources", "estates"].map(asset => (
+        Object.keys(this.state[asset]).map(prop => {
+          if (this.state[asset].hasOwnProperty(prop)){
+            return (Object.keys(this.state[asset][prop]).map((childProp, index )=>{
+              if (this.state[asset][prop].hasOwnProperty(childProp)){
+                // this format converts ids into nulls, as they are rebuilt when loading
+                return index === 0 ? null : this.state[asset][prop][childProp]
+        }}))}})
+      ))
+      const saveState = {
+        ...this.state,
+        minions : assetArrays[0],
+        upgrades : assetArrays[1],
+        playerResources : assetArrays[2],
+        estates : assetArrays[3],
+        newState : null
+      }
+      localStorage.setItem('saveData', lzw_encode(JSON.stringify(saveState)))
+      
+      const saveInputText = this.state.loadInputValue
+      const isInputEmpty = saveInputText === "" || !saveInputText.replace(/\s/g, '').length
+      const saveFileName = isInputEmpty ? new Date().toLocaleString : saveInputText
+    })
+  }
+
+  saveSlotHandler = slotNumberName => {
+    const saveSlots = Object.keys(this.state.saveSlots).map(slot => {
+      const slotObject = this.state.saveSlots[slot]
+      slotObject.active = slotNumberName === slot
+      return slotObject
+    })
+    //saveslots has numbers while this.state.saveslots has letters, why?
+    console.log(saveSlots, this.state.saveSlots)
+    this.setState({
+//      saveSlots : saveSlots
+    })
+  }
+
   render () {
-      const playerResourcePanel = Object.getOwnPropertyNames(this.state.playerResources).map(name => {
-        const resource = this.state.playerResources[name]
-        let effectObject = ""
-        let increasePerTick = resource.increasePerTick
-        if (resource.isMinion){
-          effectObject = this.state.minions[name].effect
-          increasePerTick = undefined
-        }
-        return resource.hidden ? null : (
-          <PlayerResource
-            key = {resource.id} 
-            iconImg = {resource.icon}
-            name = {resource.displayName}
-            amount = {resource.amount}
-            increasePerTick = {increasePerTick}
-            max = {resource.max}
-            isMinion = {resource.isMinion}
-            effectObject = {effectObject}
-          />
-      )})
+    const fireIcon = jsxicon(this.state.fireName)
+    const timeIcon = jsxicon(this.state.timeName, undefined, 'xlarge')
+    const playerResourcePanel = Object.getOwnPropertyNames(this.state.playerResources).map(name => {
+      const resource = this.state.playerResources[name]
+      let effectObject = ""
+      let increasePerTick = resource.increasePerTick
+      if (resource.isMinion){
+        effectObject = this.state.minions[name].effect
+        increasePerTick = undefined
+      }
+      return resource.hidden ? null : (
+        <PlayerResource
+          key = {resource.id} 
+          iconName = {resource.iconName}
+          name = {resource.displayName}
+          amount = {resource.amount}
+          increasePerTick = {increasePerTick}
+          max = {resource.max}
+          isMinion = {resource.isMinion}
+          effectObject = {effectObject} />
+    )})
     
     const upgradeNames = Object.getOwnPropertyNames(this.state.upgrades)
     const upgradesPanelContent = upgradeNames.map(name => {
@@ -255,11 +418,10 @@ class App extends Component {
       )})
 
     const minionNames = Object.getOwnPropertyNames(this.state.minions)
-    const unlockedMinions = minionNames.filter((minion) => {
-      return this.state.minions[minion].unlocked
-    })
+    const unlockedMinions = minionNames.filter(minion => (
+      this.state.minions[minion].unlocked ))
 
-    const summoningPanelContent = unlockedMinions.map(name => {
+      const summoningPanelContent = unlockedMinions.map(name => {
       const minion = this.state.minions[name]
       return (
       <MinionButton
@@ -269,99 +431,172 @@ class App extends Component {
         label = {minion.displayName} />
       )})
 
-    const shopPanelContent = (
-      <div className="col py-4">
-        {"placeholder"}
-      </div> 
-    )
-
-    const mainPanelContent = (
-      <>
-        <div className='col-2 text-center'>
-          <div className="row py-1">
-            <div className="col h5">
-              Actions
-            </div>
-          </div>
-          <div className="row">
-            <div className="col">
-              <ActionButton
-                  iconImg = {this.state.fireIcon}
-                  click= {() => this.energyButtonHandler()}
-                  name='Pillage'/>
-            </div>
-          </div>
-        </div>
-        <div className='col-5 text-center'>
-          <div className="row py-1">
-            <div className="col h5">
-              Resources
-            </div>
-          </div>
-          <div className="row">
-            <div className="col">
-              {playerResourcePanel}
-            </div>
-          </div>
-        </div>
-        <div className='col-5 text-center'>
-          <div className="row py-1">
-            <div className="col h5">
-              Information
-            </div>
-          </div>
-          <div className="row">
-            <div className="col">
-              <p className="text-justify">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                sed do eiusmod tempor incididunt ut labore et dolore magna
-                aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-              </p>
-            </div>
-          </div>
-        </div>
-      </>
-    )
-
-    const estatePanelContent = (
-      <>
-        {this.state.houseIcon} {" "}
-        Estate goes here
-      </>
-    )
-
-    //this is for dragging
     return (
       <div className="App">
-        <div className='container align-bottom'>
+        <Container>
           <h1 className='mt-5'>Demon Clicker v0.1.0</h1>
-        </div>
-        <UIPanel header="Main Panel" key={this.state.panels.main.id} isTop={true}>
-          <div className='row py-1'>
-            {mainPanelContent}
-          </div>
+        </Container>
+        <UIPanel header="Main Panel"
+                 key={this.state.panels.main.id}
+                 isTop >
+          <Row>
+            <Col md="2">
+              <Row>
+                <Col className="h5"> Actions </Col>
+              </Row>
+              <Row className="h-50">
+                <Col>
+                  <Button color="jindigo" className="w-100 h-100"
+                      onClick= {() => this.energyButtonHandler()}>
+                    {fireIcon} Pillage
+                  </Button>
+                </Col>
+              </Row>
+            </Col>
+            <Col md="5">
+              <Row>
+                <Col className="h5"> Resources </Col>
+              </Row>
+              <Row>
+                <Col>
+                  {playerResourcePanel}
+                </Col>
+              </Row>
+            </Col>
+            <Col md="5">
+              <Row>
+                <Col className="h5"> Information </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <p className="text-justify">
+                    {this.state.infoPanel}
+                  </p>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
+          <Row className="py-3 border">
+            <Col md="6">
+              <ButtonGroup vertical className="w-100 savegroup">
+                <Button color={this.state.saveSlots.one.active ? "darkrose" : "bone"}
+                    className="mb-1 py-1" onClick={() => this.saveSlotHandler('one')}>
+                  Save Slot 1: {
+                    this.state.saveSlots.one.name === null ?
+                    (<em>(Empty)</em>) : this.state.saveSlots.one.name
+                  }
+                </Button>
+                <Button color={this.state.saveSlots.two.active ? "darkrose" : "bone"}
+                    onClick={() => this.saveSlotHandler('two')}>
+                  Save Slot 2: {
+                    this.state.saveSlots.two.name === null ?
+                    (<em>(Empty)</em>) : this.state.saveSlots.two.name
+                  }
+                </Button>
+                <Button color={this.state.saveSlots.three.active ? "darkrose" : "bone"}
+                    className="mt-1 py-1" onClick={() => this.saveSlotHandler('three')} >
+                  Save Slot 3: {
+                    this.state.saveSlots.three.name === null ?
+                    (<em>(Empty)</em>) : this.state.saveSlots.three.name
+                  }
+                </Button>
+              </ButtonGroup>
+            </Col>
+            <Col md="6">
+              <Row>
+                <Col className="h5">Load / Save</Col>
+              </Row>
+              <Row>
+                <Col>
+                  <p className="mb-0">
+                    Select a save slot and press <Badge color="darkrose">Save</Badge>
+                    to overwrite it. You may provide a name in the input below,
+                    otherwise the current date will be used instead.
+                  </p>
+                </Col>
+              </Row>
+              <Row>
+                <Col md="8" className="px-1">
+                  <input className="w-100 h-100" type="text"
+                      value={this.state.loadInputValue}
+                      onChange={this.loadInputHandler}/>
+                </Col>
+                <Col md="2" className="pr-1">
+                  <Button className="w-100 py-1" color="darkrose"
+                        onClick={() => this.loadButtonHandler()}>
+                      Load
+                    </Button>
+                </Col>
+                <Col md="2" className="pl-1">
+                <Button className="w-100 py-1" color="darkrose" 
+                        onClick={() => this.saveButtonHandler()}>
+                      Save
+                    </Button>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
         </UIPanel>
-        <UIPanel header="Estate" key={this.state.panels.estate.id} isTop={true}>
-          <div className='row py-1'>
-            {estatePanelContent}
-          </div>
+        <UIPanel header="Estate"
+                 key={this.state.panels.estate.id}
+                 isTop >
+          <Row>
+            <Col>
+              <Row className="py-1">
+                <Col md={{size : 2, offset : 1 }}>
+                  {timeIcon}
+                </Col>
+                <Col md="2">
+                  <h3>Year 199</h3>
+                  <h5>Day X, {this.state.timeClock}</h5>
+                </Col>
+                <Col md="2" className="border-left border-midnight" >
+                  {this.state.currentEstate.icon}
+                </Col>
+                <Col md="2" className="border-right border-midnight">
+                  <Row>
+                    <Col className="h5">{this.state.currentEstate.displayName}</Col>
+                  </Row>
+                  <Row>
+                    <Col>Currency Limit:
+                      <UINumber type="accounting"
+                          value={this.state.currentEstate.limit}/>
+                    </Col>
+                  </Row>
+                </Col>
+                <Col md="2">
+                  <Button className="w-100 h-100" color="midnight" 
+                      onClick={() => this.estateButtonHandler()}>
+                    <Row>
+                      <Col>
+                      {this.state.nextEstateName}
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col>(Cost:
+                        <UINumber type="accounting" value={this.state.nextEstateCost}/>)
+                      </Col>
+                    </Row>
+                  </Button>
+                </Col>                
+              </Row>
+            </Col>
+          </Row>
         </UIPanel>
-        <UIPanel header="Shop" key={this.state.panels.shop.id} isTop={true}>
-          <div className='row py-1'>
-            {shopPanelContent}
-          </div>
-        </UIPanel>
-        <UIPanel header="Upgrades" key={this.state.panels.upgrades.id} isTop={true}>
-          <div className='row py-1'>
+        <UIPanel header="Upgrades"
+                 key={this.state.panels.upgrades.id}
+                 isTop >
+          <Row>
             {upgradesPanelContent}
-          </div>
-        </UIPanel>                        
-        <UIPanel header="Summoning" key={this.state.panels.summoning.id} isTop={true}>
-          <div className='row py-1'>
+          </Row>
+        </UIPanel>
+        <UIPanel header="Summoning"
+                 key={this.state.panels.summoning.id}
+                 isTop >
+          <Row>
             {summoningPanelContent}
-          </div>
-        </UIPanel>                        
+          </Row>
+        </UIPanel>                                
       </div>
     )
   }

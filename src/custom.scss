@@ -1,23 +1,27 @@
 // Override default variables before the import
 $body-bg: #666666;
 
-$bone: #E3DAC9;
-$beige: #F5F5DC;
-$gold: #a57c00;
-$darkcandy: #A40000;
-$midnight: #18184E;
-$darkberry: #872657;
-$jindigo: #264348;
+$bone      : #E3DAC9;
+$beige     : #F5F5DC;
+$gold      : #956C00;
+$darkrose  : #D08F8C;
+$darkcandy : #A40000;
+$midnight  : #18184E;
+$darkberry : #872657;
+$jindigo   : #264348;
+$copper    : #DA8A67;
 
 /* custom color mapping */
 $theme-colors: (
   bone: $bone,
   beige: $beige,
   gold: $gold,
+  darkrose: $darkrose,
   darkcandy: $darkcandy,
   midnight: $midnight,
   darkberry: $darkberry,
-  jindigo: $jindigo
+  jindigo: $jindigo,
+  copper : $copper
 );
 
 .headerrow {

@@ -3,6 +3,11 @@ body {
   font-family: 'Cuprum', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /** background image */
+  background-image: url('./img/bg_castle.jfif');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
 }
 
 code {

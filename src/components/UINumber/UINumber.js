@@ -1,57 +1,36 @@
 import React from 'react';
-import colors from './../../scripts/colors.js'
+//import colors from './../../scripts/colors.js'
+import jsxicon from '../../scripts/jsxicon.jsx';
+
 const UINumber = props => {
-    /*const suffixes = {
-        currencyNames : ['copper', 'silver', 'gold', 'electrum', 'platinum', 'palladium', 'draconium'],
-        powers : ['', 'K', 'M', 'B', 'T', 'Q'],
-        value : props.value.toFixed(0),
-        currency : () => {
-            const scale = 100
-            const power = Math.log10(scale)
-            for (const i = 0; i < power; i++){
-                
-            }
-            while (this.value > 100){}
-            return (
-                <>
-                (value / Math.pow(scale, power)) jsxicon(currencyNames[i])
-                </>
-            )
-        },
-        number : () => {
-            const scale = 1000
-            const power = Math.floor(Math.log(this.value) / Math.log(scale))
-            const i = 0
-            return (
-                <>
-                {(this.value / Math.pow(scale, power))} {this.currencyNames[i]}
-                </>
-            )
-        },
-        default: () => {
-            return props.value
-        }
-    }*/
-
-    if (props.value > 100){
-
-    }
-        const warningThreshold = 0.9
-        let numberColor;
-    if (props.value < props.max * warningThreshold){
-        numberColor = colors.midnight
-    }else if (props.value >= props.max * warningThreshold && props.value < props.max){
-        numberColor = colors.gold
-    } else if (props.value === props.max){
-        numberColor = colors.darkcandy
-    }
-    
-      return (
-        <span style={{color : numberColor }}>
-            {Math.floor(props.value)}
-        </span>
-        
-    )
+    let value = props.value
+    if (props.type === 'currency'){
+        const currencies = ['copper', 'silver', 'gold', 'electrum', 'platinum', 'palladium', 'draconium']
+        const digits = 2
+        const valueArray = value.toString().match(new RegExp('(\\d+?)(?=(\\d{' + digits + '})+(?!\\d)|$)','g'))
+        const currencyArray = currencies.slice(0, valueArray.length).reverse()
+        const label = currencyArray.map((currency, index) => {
+            return valueArray[index] === '00' ? null : (
+            <span className="mr-2" key={index}>
+                {valueArray[index]} {jsxicon(currency, undefined, 'small')}
+            </span>
+        )})
+        return (
+            <>
+            {label}
+            </>
+        )
+    } else if (props.type === 'accounting') {
+        value = Math.trunc(value)
+        const powers = ['', 'K', 'M', 'B', 'T', 'Q']
+        const digits = 3
+        const valueArray = value.toString().match(new RegExp('(\\d+?)(?=(\\d{' + digits + '})+(?!\\d)|$)','g'))
+        return (
+            <span className="mx-1">
+                {valueArray[0]}{valueArray.length > 1  && valueArray[1] !== '000' ? ("." + valueArray[1].slice(0, -1)): null}{powers[valueArray.length - 1]}
+            </span>
+        )
+    } else return null
 }
 
 export default UINumber

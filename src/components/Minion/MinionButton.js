@@ -1,25 +1,28 @@
 import React from 'react'
 import jsxicon from './../../scripts/jsxicon.jsx'
-const uuidv4 = require('uuid/v4')
+import { Button, Col, Row } from 'reactstrap';
+import UINumber from '../UINumber/UINumber.js';
 
 const minionButton = props => {
-    const costLabel = Object.keys(props.cost).map(key => {
-      const id = uuidv4()
+    const costLabel = Object.keys(props.cost).map((key, index) => {
       return (
-        <span key = {id} className="px-1">
-          {props.cost[key]} {" "} {jsxicon(key)}
+        <span key={index} className="px-1">
+          <UINumber type="accounting" value={props.cost[key]}/> {" "} {jsxicon(key)}
         </span>
     )})
 
     return (
-      <div className="col">
-        <button 
-            className='col btn-darkberry'
-            onClick={props.click}>
-          {props.label} ( Cost: {costLabel})
-        </button>
-      </div>
-    );  
+      <Col className="my-2">
+        <Button color="darkberry" onClick={props.click}>
+          <Row>
+            <Col>{props.label}</Col>
+          </Row>
+          <Row>
+            <Col>( Cost: {costLabel})</Col>
+          </Row>
+        </Button>
+      </Col>
+    )
 }
 
 export default minionButton

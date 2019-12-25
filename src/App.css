@@ -1,3 +1,19 @@
 .App {
   text-align: center;
 }
+
+.btn:not(.dragbutton):not(.viewbutton) .svgicon {
+  -webkit-filter: drop-shadow( 2px 2px 1px rgba(36, 31, 31, 1));
+  filter: drop-shadow( 2px 2px 1px rgba(36, 31, 31, 1));
+}
+
+.savegroup Button:active {
+  background-color : #C3BAB9 !important;
+}
+
+.unselectable {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

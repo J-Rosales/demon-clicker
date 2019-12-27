@@ -11,7 +11,9 @@ const upgradeButton = props => {
   }
   return (
     <Col className="my-2">
-      <Button color={buttonColors[props.type]} className="w-100 h-100 shadow" onClick={props.click}>
+      <Button color={buttonColors[props.type]}
+          className="w-100 h-100 shadow" onClick={props.click}
+          onMouseOver={props.mouseOver}>
         <Row>
           <Col>
             {jsxicon(props.name + "Rune", '#FFFFFF', 'large')}

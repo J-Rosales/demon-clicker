@@ -13,7 +13,8 @@ const minionButton = props => {
 
     return (
       <Col className="my-2">
-        <Button color="darkberry" onClick={props.click}>
+        <Button color="darkberry" onClick={props.click}
+            onMouseOver={props.mouseOver}>
           <Row>
             <Col>{props.label}</Col>
           </Row>

@@ -10,7 +10,7 @@ import gameData from './scripts/gameData'
 import UIPanel from './components/UIPanel/UIPanel'
 import UINumber from './components/UINumber/UINumber'
 import {lzw_encode, lzw_decode} from './scripts/lzwCompress'
-import colors from './scripts/colors';
+//import colors from './scripts/colors';
 const uuidv4 = require('uuid/v4')
 
 //import { listenerCount } from 'cluster'
@@ -18,17 +18,35 @@ const uuidv4 = require('uuid/v4')
 /*Implement currency into UINumber, by having a "hasIcon" option, as well as returning
   fix playerResourcesPanel mapping for return shorthand
   make time into object
+
+  TODO: Fix Save Slot
+  - Implement save/load method, i.e. data is being simplified to reduce file size, it must be
+  restructured back beyond just copying the state object
+  - Restructure maps that don't return a value into filter-then-map if applicable
 */
 
 class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      infoPanel      : 'Welcome to Demon Clicker. You may start by pillagig to get some energy and currency, to then purchase runes, which allow you to summon minions.',
+      infoPanel      : (<>
+      Welcome to Demon Clicker. Your goal is to become the most powerful Warlock
+      in the land. Click <Badge className="mx-1" color="jindigo">Pillage</Badge>
+      to begin your  quest for dark energies, riches and power. You can learn
+      additional information by hovering over various elements if on desktop, or
+      by clicking / tapping the {jsxicon('question', undefined, 'small')} icons.</>),
       loadInputValue : '',
       lastSave       : null,
       saveString     : "default",
-      time           : 0,
+      time           : {
+        name      : 'dawn',
+        moonIndex : 0,
+        value     : 0,
+        timer     : null,
+        day       : 1,
+        year      : 1,
+        clock     : '6:00'
+      },
       panels         : {
         main      : { index  : 0, id : uuidv4(),  header : 'Main Panel' },
         estate    : { index  : 1, id : uuidv4(),  header : 'Estate'},
@@ -48,30 +66,92 @@ class App extends Component {
       playerResources: gameData.getGameAsset('playerResources'),
       estates        : gameData.getGameAsset('estate'),
       fireName       : 'fire',
-      timeName       : 'dawn',
-      timeClock      : '02:10',
       currentEstate  : gameData.estate.shack, 
-      timer          : null,
-      nextEstateName : gameData.estate.house.displayName,
+      nextEstateName : 'house',
       nextEstateCost : gameData.estate.house.cost
     }
   }
 
   componentDidMount = () => {
-    this.timer = setInterval(() => this.timeUpdate(), 100)
+    this.timerID = setInterval(() => this.timeUpdate(), 100)
   }
 
   componentWillUnmount = () => {
-    clearInterval(this.timer)
+    clearInterval(this.timerID)
   }
 
   timeUpdate = () => {
     this.setState(prevState => {
-      const time = prevState.time++
+      let hourName = prevState.time.name
+      let moonIndex = prevState.time.moonIndex
+      let day = prevState.time.day
+      let year = prevState.time.year
+      const tickTime = 6
+      const timeOfDay = {
+        dawn : 6, noon : 12,
+        dusk : 18, night: 20,
+      }            
+      const moonPhases = [
+        'newMoon',
+        'waxingCrescentMoon',
+        'firstQuarterMoon',
+        'waxingGibbousMoon',
+        'fullMoon',
+        'wanningGibbousMoon',
+        'lastQuarterMoon',
+        'waningCrescentMoon'
+      ]
+      
+      let [hours, minutes] = prevState.time.clock.split(":")
+      minutes = parseInt(minutes, 10) + 1
+      hours = parseInt(hours, 10)
+      
+      if (minutes >= 60){
+        minutes = 0
+        if (hours === 23){
+          hours = 0
+          if (day === 364){
+            day = 1
+            year++
+          } else {
+            day++
+          }
+        } else {
+          hours++
+        }
+      } else {
+        minutes+= tickTime
+      }
+
+      if (minutes === 0){
+        Object.keys(timeOfDay).map(hour => {
+          if (hours === timeOfDay[hour]){
+            hourName = hour === 'night'? moonPhases[moonIndex]: hour
+            if (hourName === 'dawn') moonIndex++
+          }
+        })
+      }
+      minutes = ("0" + minutes.toString()).slice(-2)
+      hours = ("0" + hours.toString()).slice(-2)
+      
+      let time = {
+        ...prevState.time,
+        moonIndex : moonIndex,
+        name : hourName,
+        value : prevState.time.value + 1,
+        clock : `${hours}:${minutes}`,
+        day: day,
+        year: year
+      }
+      return {time}
+    })
+    
+    this.setState(prevState => {
+      let newState = {}
+
       const playerResources = {...prevState.playerResources}
       const minions = {...prevState.minions}
-      const timeClock = prevState.timeClock
-      let newState = {}
+
       for(const playerResource in playerResources){
         if (playerResources[playerResource].isMinion){
           for (const resourceName in minions[playerResource].effect){
@@ -96,41 +176,13 @@ class App extends Component {
           playerResources[playerResource].increasePerTick = increaseSum
         }
       }
-
-      const timeOfDay = {
-        dawn : 6,
-        noon : 12,
-        dusk : 6,
-        night: 8,
-      }
-
-      const tickTime = 6
-      let [hours, minutes] = timeClock.split(":")
-      minutes = parseInt(minutes, 10) + 1
-      hours = parseInt(hours, 10)
-      
-      if (minutes >= 60){
-        minutes = 0
-        if (hours === 23){
-          hours = 0
-        } else {
-          hours++
-        }
-      } else {
-        minutes+= tickTime
-      }
-      minutes = ("0" + minutes.toString()).slice(-2)
-      hours = ("0" + hours.toString()).slice(-2)
-
       newState = {
         ...prevState,
         playerResources : playerResources,
-        time : time,
-        timeClock: "fuck"
       }
-
       return { newState }
     })
+    
   }
 
   getProgressString = () => {}
@@ -213,13 +265,12 @@ class App extends Component {
                 max : estates[estateArray[i + 1]].limit
               }
             }
-            
             newState = {
               ...prevState,
               estates         : estates,
               playerResources : playerResources,
               nextEstateCost  : nextEstate.cost,
-              nextEstateName  : nextEstate.displayName,
+              nextEstateName  : estateArray[i + 2],
               currentEstate   : currentEstate
             }
           return (newState)
@@ -365,8 +416,27 @@ class App extends Component {
       const saveInputText = this.state.loadInputValue
       const isInputEmpty = saveInputText === "" || !saveInputText.replace(/\s/g, '').length
       const saveFileName = isInputEmpty ? new Date().toLocaleString : saveInputText
+      this.setState(prevState => {
+        const saveSlots = {
+          ...prevState.saveSlots,
+          one : {
+            //...one,
+            name : saveFileName,
+          }
+        }
+        return saveSlots
+      })
     })
   }
+
+  loadButtonHandler = () => {
+    const data = localStorage.getItem('saveData')
+    const loadObject = lzw_decode(JSON.parse(data))
+    this.setState({
+      loadObject
+    })
+  }
+
 
   saveSlotHandler = slotNumberName => {
     const saveSlots = Object.keys(this.state.saveSlots).map(slot => {
@@ -381,9 +451,20 @@ class App extends Component {
     })
   }
 
+  onElementHover = (name, color, description) => {
+    if (description !== this.state.infoPanel){
+      this.setState({
+        infoPanel : (
+          <>
+            <Badge className="mr-1" color={color}>{name}</Badge>: {description}
+          </>
+        )
+      })
+    }
+  }
   render () {
     const fireIcon = jsxicon(this.state.fireName)
-    const timeIcon = jsxicon(this.state.timeName, undefined, 'xlarge')
+    const timeIcon = jsxicon(this.state.time.name, undefined, 'xlarge')
     const playerResourcePanel = Object.getOwnPropertyNames(this.state.playerResources).map(name => {
       const resource = this.state.playerResources[name]
       let effectObject = ""
@@ -412,6 +493,7 @@ class App extends Component {
           key = {upgrade.id}
           name = {name}
           click = {() => this.upgradeButtonHandler(upgrade)}
+          mouseOver = {() => this.onElementHover(upgrade.displayName, upgrade.type === 'buff' ? 'darkrose' : 'jindigo', upgrade.description)}
           productName = {upgrade.displayName}
           cost = {upgrade.cost}
           type = {upgrade.type} />
@@ -421,13 +503,19 @@ class App extends Component {
     const unlockedMinions = minionNames.filter(minion => (
       this.state.minions[minion].unlocked ))
 
-      const summoningPanelContent = unlockedMinions.map(name => {
+      const summoningPanelContent = unlockedMinions.length === 0 ? (
+        <Col className="py-2">
+          <em>(You must buy Rune Upgrades to be able to summon minions.)</em>
+        </Col>
+      )
+      : unlockedMinions.map(name => {
       const minion = this.state.minions[name]
       return (
       <MinionButton
         key = {minion.id}
         cost = {minion.cost}
         click = {() => this.minionButtonHandler(minion, name)}
+        mouseOver = {() => this.onElementHover(minion.displayName, 'darkberry', minion.description)}
         label = {minion.displayName} />
       )})
 
@@ -476,6 +564,9 @@ class App extends Component {
               </Row>
             </Col>
           </Row>
+          <Row>
+            <Col className="h5">Load / Save</Col>
+          </Row>
           <Row className="py-3 border">
             <Col md="6">
               <ButtonGroup vertical className="w-100 savegroup">
@@ -503,9 +594,6 @@ class App extends Component {
               </ButtonGroup>
             </Col>
             <Col md="6">
-              <Row>
-                <Col className="h5">Load / Save</Col>
-              </Row>
               <Row>
                 <Col>
                   <p className="mb-0">
@@ -547,11 +635,12 @@ class App extends Component {
                   {timeIcon}
                 </Col>
                 <Col md="2">
-                  <h3>Year 199</h3>
-                  <h5>Day X, {this.state.timeClock}</h5>
+                  <h3>Year {this.state.time.year}</h3>
+                  <h5>Day {this.state.time.day}, {this.state.time.clock}</h5>
+                  <h5>t: {this.state.time.value}</h5>
                 </Col>
                 <Col md="2" className="border-left border-midnight" >
-                  {this.state.currentEstate.icon}
+                  {jsxicon(this.state.currentEstate.iconName, undefined, 'xlarge')}
                 </Col>
                 <Col md="2" className="border-right border-midnight">
                   <Row>
@@ -566,10 +655,11 @@ class App extends Component {
                 </Col>
                 <Col md="2">
                   <Button className="w-100 h-100" color="midnight" 
-                      onClick={() => this.estateButtonHandler()}>
+                      onClick={() => this.estateButtonHandler()}
+                      onMouseOver={() => this.onElementHover(this.state.estates[this.state.nextEstateName].displayName, 'midnight',this.state.estates[this.state.nextEstateName].description)}>
                     <Row>
                       <Col>
-                      {this.state.nextEstateName}
+                      {this.state.estates[this.state.nextEstateName].displayName}
                       </Col>
                     </Row>
                     <Row>

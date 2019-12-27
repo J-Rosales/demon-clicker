@@ -16,6 +16,13 @@ const getCurrencyNumber = (number) => {
     }
 }
 
+const camelToWords = string => {
+    return string.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+}
+const pascalToWords = string => {
+    const camel = camelToWords(string)
+    return camel.charAt(0).toUpperCase() + camel.slice(1)
+}
 // money should have a VALUE limit
 const gameData = {
     minions: {},
@@ -53,6 +60,7 @@ const gameData = {
         return buyableArray
     },
     addMinion(name, displayName = undefined,
+              description = "NODESC",
               costObject,
               effectObject,
               defaultAmount = 0,
@@ -67,6 +75,7 @@ const gameData = {
         this.minions[name] = {
             id : uuidv4(),
             displayName : displayName,
+            description : description,
             amount      : defaultAmount,
             isBuyable   : isBuyable,
             cost        : costObject,
@@ -75,7 +84,7 @@ const gameData = {
         }
         return isNewMinion
     },
-    addUpgrade(name, displayName = undefined,
+    addUpgrade(name, displayName = undefined, description = "NODESC",
                cost = 0, type = null, value = null, hidden = false){
         if (displayName === undefined || displayName === "" ) {
             displayName = pascalToWords(name)
@@ -83,6 +92,7 @@ const gameData = {
         this.upgrades[name] = {
             id : uuidv4(),
             displayName : displayName,
+            description : description,
             cost   : cost,
             type   : type, 
             value  : value,
@@ -118,6 +128,7 @@ const gameData = {
         return isNewResource
     },
     addEstate(name = "newEstate",
+              description = "NODESC",
               cost,
               currencyLimit = -1,
               iconName = undefined,
@@ -132,9 +143,10 @@ const gameData = {
         const costAmount = getCurrencyNumber(cost)
         this.estate[name] = {
             id          : uuidv4(),
-            iconName : iconName,
+            iconName    : iconName,
             active      : active,
-            displayName : name.charAt(0).toUpperCase() + name.slice(1),
+            description : description,
+            displayName : pascalToWords(name),
             cost        : costAmount,
             limit       : currencyAmount
         }
@@ -182,38 +194,34 @@ Lich costs 10mil currency, 1mil souls, produces Dark Energy
     Summoning Lemniscate: Raise Nightmares 
 
 */
-
-
-
-const camelToWords = string => {
-    return string.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-}
-const pascalToWords = string => {
-    const camel = camelToWords(string)
-    return camel.charAt(0).toUpperCase() + camel.slice(1)
-}
-
 const create = {
     minion : (options) => {
-        if (!options.hasOwnProperty('displayName')) { options.displayName = camelToWords(options.name) }
+        if (!options.hasOwnProperty('displayName')) { options.displayName = pascalToWords(options.name) }
         if (!options.hasOwnProperty('defaultMax')) { options.defaultMax = 10 }
         if (!options.hasOwnProperty('upgradeSuffix')) { options.upgradeSuffix = "Rune" }
+        if (!options.hasOwnProperty('description')) { options.description = "NODESC" }
+        const nameArticle = ['a', 'e', 'i', 'o', 'u'].includes(options.name.charAt(0)) ? 'an' : 'a'
+
         gameData.addPlayerResource(options.name, true, options.defaultMax, true, true, options.name)
-        gameData.addMinion(options.name, options.displayName, options.minionCost, options.effectObject, 0, true, false, false)
-        gameData.addUpgrade(options.name, pascalToWords(options.displayName + options.upgradeSuffix), options.upgradeCost, 'minion', options.name)
+        gameData.addMinion(options.name, options.displayName, options.description, options.minionCost, options.effectObject, 0, true, false, false)
+        gameData.addUpgrade(
+            options.name, 
+            pascalToWords(options.displayName + options.upgradeSuffix),
+            `Allows you to Summon ${nameArticle} ${options.displayName}`,
+            options.upgradeCost,
+            'minion',
+            options.name)
     }
 }
 
 //initializing player resources
-gameData.addPlayerResource('energy', false, 10000000000)
+gameData.addPlayerResource('energy', false, 99999999999)
 gameData.addPlayerResource('currency')
 
-//gameData.addUpgrade('houseSize', 'The Big House :)', 10, 'estate', {currency: 50, energy: 50})
-
-gameData.addUpgrade('sharpClaws', undefined, 5, 'buff', {
+gameData.addUpgrade('sharpClaws', undefined, "Imps generate a bit more Dark Energy each.", 5, 'buff', {
     imp: { effectObject : { energy : 0.2 }}}, true)
 
-gameData.addUpgrade('gallonsOfMilk', undefined, 105, 'buff', {
+gameData.addUpgrade('gallonsOfMilk', undefined, "", 105, 'buff', {
     skeleton: { effectObject : { currency : 2 }}}, true)
 
 create.minion({
@@ -221,7 +229,7 @@ create.minion({
     minionCost  : {energy : 5},
     upgradeCost : 5,
     effectObject: {energy : 0.1},
-    description: "wenk"
+    description: "Mischievous fiends that wreck havoc, which releases Dark Energy"
 })
 
 create.minion({
@@ -230,7 +238,7 @@ create.minion({
     minionCost  : {energy : 5},
     upgradeCost : 105,
     effectObject: {energy : 0.1},
-    description: "wenk"
+    description: "Passively drains your money and produces more every new day. Disclaimer: The role of the lawyer varies greatly across different legal jurisdictions."
 })
 
 create.minion({
@@ -238,7 +246,7 @@ create.minion({
     minionCost  : {energy : 5},
     upgradeCost : 2,
     effectObject: {energy : 100000, currency : 100000},
-    description: "wenk"
+    description: "The spookiest of henchmen. Produces a good balance of Dark Energy and Currency."
 })
 
 create.minion({
@@ -257,25 +265,25 @@ create.minion({
     description: "wenk"
 })
 
-gameData.addEstate('shack', 0, 10, undefined, true)
-gameData.addEstate('house', 10, 200)
-gameData.addEstate('twinHouse', 200, '5K')
-gameData.addEstate('manor', 3500, '25K')
-gameData.addEstate('mansion', '20K', '100K')
-gameData.addEstate('castle', '85K', '250K')
-gameData.addEstate('castleTown', '200K', '1M')
-gameData.addEstate('kingdom', '850K', '30M')
-gameData.addEstate('conurbation', '25M', '150M')
-gameData.addEstate('empire', '120M', '500M')
-gameData.addEstate('superstate', '450M', '1B')
-gameData.addEstate('worldFederation', '750M', '3B')
-gameData.addEstate('planetarySystem', '2B', '10B')
-gameData.addEstate('starSystem', '9B', '30B')
-gameData.addEstate('galacticArm', '25B', '200B')
-gameData.addEstate('galaxy', '175B', '1T')
-gameData.addEstate('localGroup', '850B', '10T')
-gameData.addEstate('superCluster', '9T', '50T')
-gameData.addEstate('observableUniverse', '45T', '300T')
-gameData.addEstate('universe', '250T', '1Q')
+gameData.addEstate('shack', "", 0, 10, undefined, true)
+gameData.addEstate('house', "An austere abode with two bedrooms. You can finally store some arcane tomes.", 10, 200)
+gameData.addEstate('twinHouse', undefined, 200, '5K')
+gameData.addEstate('manor', undefined, 3500, '25K')
+gameData.addEstate('mansion', undefined, '20K', '100K')
+gameData.addEstate('castle', undefined, '85K', '250K')
+gameData.addEstate('castleTown', undefined, '200K', '1M')
+gameData.addEstate('kingdom', undefined, '850K', '30M')
+gameData.addEstate('conurbation', undefined, '25M', '150M')
+gameData.addEstate('empire', undefined, '120M', '500M')
+gameData.addEstate('superstate', undefined, '450M', '1B')
+gameData.addEstate('worldFederation', undefined, '750M', '3B')
+gameData.addEstate('planetarySystem', undefined, '2B', '10B')
+gameData.addEstate('starSystem', undefined, '9B', '30B')
+gameData.addEstate('galacticArm', undefined, '25B', '200B')
+gameData.addEstate('galaxy', undefined, '175B', '1T')
+gameData.addEstate('localGroup', undefined, '850B', '10T')
+gameData.addEstate('superCluster', undefined, '9T', '50T')
+gameData.addEstate('observableUniverse', undefined, '45T', '300T')
+gameData.addEstate('universe', undefined, '250T', '1Q')
 
 export default gameData;

@@ -17,5 +17,5 @@
   .hiderow-leave.hiderow-leave-active {
     max-height: 0px;
     opacity: 0;
-    transition: max-height 300ms 100ms ease-out, opacity 250ms linear,;
+    transition: max-height 300ms 100ms ease-out, opacity 250ms linear;
   }

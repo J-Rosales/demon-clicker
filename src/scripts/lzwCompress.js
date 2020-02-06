@@ -1,6 +1,7 @@
 /* Lempel–Ziv–Welch algorithm in JS based on revolunet's
    (https://gist.github.com/revolunet)
    modified by J-Rosales to comply with ES6 */
+
 const lzw_encode = s => {
     const dict = {}
     const data = (s + "").split("")

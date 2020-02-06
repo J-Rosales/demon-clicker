@@ -18,7 +18,7 @@ const playerResource = props => {
         const percentageofTotal = props.amount.toFixed(2)
         return (
             <small key={id} className="clearfix">
-                {icon} + <UINumber type="accounting" value={gainPerSecond}/> /s ({percentageofTotal}%)
+                {icon} + <UINumber type="accounting" value={gainPerSecond}/> /s
             </small> 
         )
     })

@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import { Container, Row, Col, Button, ButtonGroup, Badge } from 'reactstrap';
 //import ReactDOM from 'react-dom'
 import './App.css'
 import MinionButton from './components/Minion/MinionButton'
@@ -10,7 +9,20 @@ import gameData from './scripts/gameData'
 import UIPanel from './components/UIPanel/UIPanel'
 import UINumber from './components/UINumber/UINumber'
 import {lzw_encode, lzw_decode} from './scripts/lzwCompress'
+import messages from './scripts/messages';
 //import colors from './scripts/colors';
+import { Container,
+         Row,
+         Col,
+         Button,
+         ButtonGroup,
+         Badge,
+         Progress
+} from 'reactstrap'
+
+
+
+
 const uuidv4 = require('uuid/v4')
 
 //import { listenerCount } from 'cluster'
@@ -23,21 +35,18 @@ const uuidv4 = require('uuid/v4')
   - Implement save/load method, i.e. data is being simplified to reduce file size, it must be
   restructured back beyond just copying the state object
   - Restructure maps that don't return a value into filter-then-map if applicable
+  - improve message import unweildiness
 */
 
 class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      infoPanel      : (<>
-      Welcome to Demon Clicker. Your goal is to become the most powerful Warlock
-      in the land. Click <Badge className="mx-1" color="jindigo">Pillage</Badge>
-      to begin your  quest for dark energies, riches and power. You can learn
-      additional information by hovering over various elements if on desktop, or
-      by clicking / tapping the {jsxicon('question', undefined, 'small')} icons.</>),
+      infoPanel      : messages.start,
+      deleteInput    : 0,
+      deleteProgress : 0,
       loadInputValue : '',
       lastSave       : null,
-      saveString     : "default",
       time           : {
         name      : 'dawn',
         moonIndex : 0,
@@ -55,9 +64,9 @@ class App extends Component {
         summoning : { index  : 4, id : uuidv4(),  header : 'Summoning'}
       },
       saveSlots      : {
-        one   : {active : false, name : null, saveString : null},
-        two   : {active : false, name : null, saveString : null},
-        three : {active : false, name : null, saveString : null}
+        one   : { active : false, name : "loading..."},
+        two   : { active : false, name : "loading..."},
+        three : { active : false, name : "loading..."}
       },
       //actions        : gameData.getGameAsset('actions'), later
       minions        : gameData.getGameAsset('minions'),
@@ -72,8 +81,50 @@ class App extends Component {
     }
   }
 
+  loadData = (prevState, encryptedData) => {
+    let newState = {}
+    const dataObject = JSON.parse(lzw_decode(encryptedData))
+    const encryptedResources = [
+      "minions",
+      "upgrades",
+      "playerResources",
+      "estates"
+    ]
+    Object.keys(dataObject).forEach(asset =>{
+      if (!encryptedResources.includes(asset)){
+        newState[asset] = dataObject[asset]
+      }
+    })
+    
+    encryptedResources.forEach(asset =>{
+      newState[asset] = {}
+      Object.keys(dataObject[asset]).forEach((prop, propIndex) => {
+        let newObject = {}
+        const assetNames = Object.keys(prevState[asset])// ["imp", "skeleton", ...etc]
+        const firstElement = prevState[asset][assetNames[0]]
+        Object.keys(firstElement).forEach((childProp, childPropIndex) => {
+          newObject[childProp] = childProp === 'id' ?
+                                           uuidv4() :
+              dataObject[asset][prop][childPropIndex]
+        })
+        newState[asset][assetNames[propIndex]] = newObject
+      })
+    })
+    newState.infoPanel = {...prevState.infoPanel}
+    newState.saveSlots = {...prevState.saveSlots}
+    return newState
+  }
+
   componentDidMount = () => {
     this.timerID = setInterval(() => this.timeUpdate(), 100)
+    this.setState({
+      saveSlots:{
+        one   : { active : false, name : localStorage.getItem('saveDataName_one')},
+        two   : { active : false, name : localStorage.getItem('saveDataName_two')},
+        three : { active : false, name : localStorage.getItem('saveDataName_three')}
+    }})
+  
+    //localStorage.getItem('saveData_one')
   }
 
   componentWillUnmount = () => {
@@ -124,7 +175,7 @@ class App extends Component {
       }
 
       if (minutes === 0){
-        Object.keys(timeOfDay).map(hour => {
+        Object.keys(timeOfDay).forEach(hour => {
           if (hours === timeOfDay[hour]){
             hourName = hour === 'night'? moonPhases[moonIndex]: hour
             if (hourName === 'dawn') moonIndex++
@@ -183,13 +234,41 @@ class App extends Component {
       return { newState }
     })
     
+    this.deleteUpdate()
+  }
+
+  deleteUpdate = () => {
+    if (this.state.deleteInput !== 0){
+      this.setState(prevState => {
+        const deleteProgress = prevState.deleteProgress + 5 >= 100 ?
+            100 : prevState.deleteProgress + 5
+        const slotNumber = prevState.deleteInput
+        let infoPanel
+        console.log(this.state.deleteProgress)
+        if (deleteProgress < 100){
+          infoPanel = (<>
+            Hold to delete Save Slot {slotNumber}...
+            <Progress color="darkcandy" value={
+              deleteProgress
+            }/>
+          </>)
+        } else {
+          infoPanel = (<>
+            Save File Deleted
+          </>)
+        }
+
+        const newState = { 
+          ...prevState,
+          deleteProgress : deleteProgress,
+          infoPanel : infoPanel
+        }
+        return newState
+      })
+    }
   }
 
   getProgressString = () => {}
-
-  saveFromString = saveString => {
-    localStorage['saveFile'] = saveString
-  }
 
   loadFromString = loadString => {
     const appStateObject = JSON.parse(loadString)
@@ -385,69 +464,141 @@ class App extends Component {
   loadInputHandler = (e) => {
     this.setState({
       loadInputValue: e.target.value
-    });
+    })
   }
 
   saveButtonHandler = () => {
-    const date = new Date()
-    this.setState({
-      infoPanel : `Game Saved. Date: ${date.toLocaleString()} id: ${(Math.random() * 100).toFixed(3)}.`,
-      lastSave  : date.toLocaleString(),
-    }, () => {
-      const assetArrays = ["minions", "upgrades", "playerResources", "estates"].map(asset => (
-        Object.keys(this.state[asset]).map(prop => {
-          if (this.state[asset].hasOwnProperty(prop)){
-            return (Object.keys(this.state[asset][prop]).map((childProp, index )=>{
-              if (this.state[asset][prop].hasOwnProperty(childProp)){
-                // this format converts ids into nulls, as they are rebuilt when loading
-                return index === 0 ? null : this.state[asset][prop][childProp]
-        }}))}})
-      ))
-      const saveState = {
-        ...this.state,
-        minions : assetArrays[0],
-        upgrades : assetArrays[1],
-        playerResources : assetArrays[2],
-        estates : assetArrays[3],
-        newState : null
-      }
-      localStorage.setItem('saveData', lzw_encode(JSON.stringify(saveState)))
-      
-      const saveInputText = this.state.loadInputValue
-      const isInputEmpty = saveInputText === "" || !saveInputText.replace(/\s/g, '').length
-      const saveFileName = isInputEmpty ? new Date().toLocaleString : saveInputText
+    const selectedSaveSlot = Object.keys(this.state.saveSlots).filter(slot => (
+       this.state.saveSlots[slot].active === true ))
+    const isAnySlotSelected = selectedSaveSlot.length > 0
+    if (isAnySlotSelected){
       this.setState(prevState => {
-        const saveSlots = {
-          ...prevState.saveSlots,
-          one : {
-            //...one,
-            name : saveFileName,
-          }
+        let newState = {}
+        const assetArrays = ["minions", "upgrades", "playerResources", "estates"].map(asset => (
+          Object.keys(prevState[asset]).map(prop => {
+            if (prevState[asset].hasOwnProperty(prop)){
+              return (Object.keys(prevState[asset][prop]).map((childProp, index )=>{
+                if (prevState[asset][prop].hasOwnProperty(childProp)){
+                  // this format converts ids into nulls, as they are rebuilt when loading
+                  return index === 0 ? null : prevState[asset][prop][childProp]
+          }}))}})
+        ))
+        // to be saved, not returned
+        
+        const saveState = {
+          ...prevState,
+          minions : assetArrays[0],
+          upgrades : assetArrays[1],
+          playerResources : assetArrays[2],
+          estates : assetArrays[3],
+          newState : null
         }
-        return saveSlots
+        
+        localStorage.setItem(
+          'saveData_' + selectedSaveSlot[0],
+          lzw_encode(JSON.stringify(saveState))
+        )
+        //console.log(localStorage.getItem('saveData_' + selectedSaveSlot[0]))
+        const saveInputText = this.state.loadInputValue
+        const isInputEmpty = saveInputText === "" ||
+            !saveInputText.replace(/\s/g, '').length
+        const saveFileName = `${isInputEmpty ?
+                                "(Untitled)" : 
+                                saveInputText} - ${new Date().toLocaleString()}`
+        let saveSlots = {...prevState.saveSlots}
+        saveSlots[selectedSaveSlot] = {
+          active : true,
+          name : saveFileName,
+        }
+
+        localStorage.setItem(
+          'saveDataName_' + selectedSaveSlot[0],
+          saveFileName
+        )
+        newState = {
+          ...prevState,
+          saveSlots : saveSlots,
+          infoPanel : (
+            <span className="text-jindigo">
+              Game Saved!
+            </span>
+          )
+        }
+        return newState
       })
-    })
+    } else {
+      this.setState({
+        infoPanel : (
+          <span className="text-danger">Warning: No Save Slot Selected</span>
+        )
+      })
+    }
   }
 
+  
+
   loadButtonHandler = () => {
-    const data = localStorage.getItem('saveData')
-    const loadObject = lzw_decode(JSON.parse(data))
-    this.setState({
-      loadObject
-    })
+    const selectedSaveSlot = Object.keys(this.state.saveSlots).filter(slot => (
+      this.state.saveSlots[slot].active === true ))
+    const isAnySlotSelected = selectedSaveSlot.length > 0
+    if (isAnySlotSelected){
+      const data = localStorage.getItem('saveData_' + selectedSaveSlot[0])
+      if (data === null){
+        this.setState({
+          infoPanel : (
+            <span className="text-danger">
+              Error: Stored save file in browser cache was not found. Did you delete your browsing history?
+            </span>
+          )
+        })
+      } else {
+        this.setState(prevState => {
+          let newState = {
+            ...this.loadData(prevState, data),
+            infoPanel : (<>Game Loaded.</>)
+          }
+          return newState
+        })
+      }
+    } else {
+      this.setState({
+        infoPanel : (
+          <span className="text-danger">
+            Warning: No Save Slot selected to Load from.
+          </span>
+        )
+      })
+    }
   }
 
 
   saveSlotHandler = slotNumberName => {
-    const saveSlots = Object.keys(this.state.saveSlots).map(slot => {
-      const slotObject = this.state.saveSlots[slot]
-      slotObject.active = slotNumberName === slot
-      return slotObject
+    const saveSlots = {...this.state.saveSlots}
+    const slotArray = Object.keys(this.state.saveSlots)
+    slotArray.forEach((slot) => {
+      saveSlots[slot].active = slot === slotNumberName
     })
-    //saveslots has numbers while this.state.saveslots has letters, why?
-    console.log(saveSlots, this.state.saveSlots)
+
+    this.setState({ saveSlots : saveSlots })
+  }
+
+  trashButtonDownHandler = slotNumber => {
     this.setState({
-//      saveSlots : saveSlots
+      deleteInput : slotNumber
+    })
+  }
+
+  trashButtonUpHandler = slotNumber => {
+    this.setState(prevState => {
+      const newState = {
+        ...prevState,
+        deleteInput: 0,
+        deleteProgress: 0,
+        infoPanel : (<>
+          Save Slot {slotNumber} Deletion cancelled.
+        </>)
+      }
+      return newState 
     })
   }
 
@@ -465,6 +616,7 @@ class App extends Component {
   render () {
     const fireIcon = jsxicon(this.state.fireName)
     const timeIcon = jsxicon(this.state.time.name, undefined, 'xlarge')
+    const trashIcon = jsxicon('trash', undefined, 'small')
     const playerResourcePanel = Object.getOwnPropertyNames(this.state.playerResources).map(name => {
       const resource = this.state.playerResources[name]
       let effectObject = ""
@@ -493,7 +645,9 @@ class App extends Component {
           key = {upgrade.id}
           name = {name}
           click = {() => this.upgradeButtonHandler(upgrade)}
-          mouseOver = {() => this.onElementHover(upgrade.displayName, upgrade.type === 'buff' ? 'darkrose' : 'jindigo', upgrade.description)}
+          mouseOver = {() => this.onElementHover(upgrade.displayName,
+              upgrade.type === 'buff' ? 'darkrose' : 'jindigo',
+              upgrade.description)}
           productName = {upgrade.displayName}
           cost = {upgrade.cost}
           type = {upgrade.type} />
@@ -553,53 +707,83 @@ class App extends Component {
             </Col>
             <Col md="5">
               <Row>
-                <Col className="h5"> Information </Col>
+                <Col className="h5">
+                  Information
+                  <span className="mx-1"
+                      onClick={() => this.onElementHover(
+                        'Information', undefined, messages.start)}>
+                    {jsxicon('question', undefined, 'small', false)}
+                  </span>
+                </Col>
               </Row>
               <Row>
                 <Col>
-                  <p className="text-justify">
                     {this.state.infoPanel}
-                  </p>
                 </Col>
               </Row>
             </Col>
           </Row>
-          <Row>
-            <Col className="h5">Load / Save</Col>
+          <Row className="border">
+            <Col className="h5 mt-2">Load / Save</Col>
           </Row>
-          <Row className="py-3 border">
+          <Row className="py-3">
             <Col md="6">
-              <ButtonGroup vertical className="w-100 savegroup">
-                <Button color={this.state.saveSlots.one.active ? "darkrose" : "bone"}
+              <Row>
+                <Col md="10" className="pr-1">
+                  <ButtonGroup vertical className="w-100 savegroup">
+                    <Button color={this.state.saveSlots.one.active ? "darkrose" : "bone"}
                     className="mb-1 py-1" onClick={() => this.saveSlotHandler('one')}>
                   Save Slot 1: {
-                    this.state.saveSlots.one.name === null ?
+                    this.state.saveSlots.one === null ?
                     (<em>(Empty)</em>) : this.state.saveSlots.one.name
                   }
                 </Button>
-                <Button color={this.state.saveSlots.two.active ? "darkrose" : "bone"}
+                    <Button color={this.state.saveSlots.two.active ? "darkrose" : "bone"}
                     onClick={() => this.saveSlotHandler('two')}>
                   Save Slot 2: {
-                    this.state.saveSlots.two.name === null ?
+                    this.state.saveSlots.two === null ?
                     (<em>(Empty)</em>) : this.state.saveSlots.two.name
                   }
                 </Button>
-                <Button color={this.state.saveSlots.three.active ? "darkrose" : "bone"}
+                    <Button color={this.state.saveSlots.three.active ? "darkrose" : "bone"}
                     className="mt-1 py-1" onClick={() => this.saveSlotHandler('three')} >
                   Save Slot 3: {
-                    this.state.saveSlots.three.name === null ?
+                    this.state.saveSlots.three === null ?
                     (<em>(Empty)</em>) : this.state.saveSlots.three.name
                   }
                 </Button>
-              </ButtonGroup>
+                  </ButtonGroup>
+                </Col>
+                <Col md="2" className="pl-0">
+                  <ButtonGroup vertical className="w-100 trashgroup">
+                    <Button color="darkcandy"
+                        className="mb-1 py-1 "
+                        onMouseDown={() => this.trashButtonDownHandler(1)}
+                        onMouseUp={() => this.trashButtonUpHandler(1)}>
+                      {trashIcon}
+                    </Button>
+                    <Button color="darkcandy"
+                        onMouseDown={() => this.trashButtonDownHandler(2)}
+                        onMouseUp={() => this.trashButtonUpHandler(2)}>
+                      {trashIcon}
+                    </Button>
+                    <Button color="darkcandy"
+                        className="mt-1 py-1"
+                        onMouseDown={() => this.trashButtonDownHandler(3)}
+                        onMouseUp={() => this.trashButtonUpHandler(3)}>
+                      {trashIcon}
+                    </Button>
+                  </ButtonGroup>
+                </Col>
+              </Row>
             </Col>
             <Col md="6">
               <Row>
                 <Col>
-                  <p className="mb-0">
-                    Select a save slot and press <Badge color="darkrose">Save</Badge>
-                    to overwrite it. You may provide a name in the input below,
-                    otherwise the current date will be used instead.
+                  <p>
+                    Select a save slot and press
+                    <Badge className="mx-1" color="darkrose">Save</Badge>
+                    to overwrite it.
                   </p>
                 </Col>
               </Row>
@@ -637,34 +821,40 @@ class App extends Component {
                 <Col md="2">
                   <h3>Year {this.state.time.year}</h3>
                   <h5>Day {this.state.time.day}, {this.state.time.clock}</h5>
-                  <h5>t: {this.state.time.value}</h5>
                 </Col>
                 <Col md="2" className="border-left border-midnight" >
                   {jsxicon(this.state.currentEstate.iconName, undefined, 'xlarge')}
                 </Col>
                 <Col md="2" className="border-right border-midnight">
                   <Row>
-                    <Col className="h5">{this.state.currentEstate.displayName}</Col>
+                    <Col className="h5">
+                      {this.state.currentEstate.displayName + " "}
+                        ( Limit: <UINumber type="currency"
+                          value={this.state.currentEstate.limit}/>)
+                    </Col>
                   </Row>
                   <Row>
-                    <Col>Currency Limit:
-                      <UINumber type="accounting"
-                          value={this.state.currentEstate.limit}/>
+                    <Col>
+                      {this.state.currentEstate.description}
                     </Col>
                   </Row>
                 </Col>
                 <Col md="2">
                   <Button className="w-100 h-100" color="midnight" 
                       onClick={() => this.estateButtonHandler()}
-                      onMouseOver={() => this.onElementHover(this.state.estates[this.state.nextEstateName].displayName, 'midnight',this.state.estates[this.state.nextEstateName].description)}>
+                      onMouseOver={() => this.onElementHover(
+                        this.state.estates[this.state.nextEstateName].displayName,
+                        'midnight',
+                        this.state.estates[this.state.nextEstateName].description)}>
                     <Row>
                       <Col>
-                      {this.state.estates[this.state.nextEstateName].displayName}
+                        Upgrade to {this.state.estates[this.state.nextEstateName].displayName}
                       </Col>
                     </Row>
                     <Row>
-                      <Col>(Cost:
-                        <UINumber type="accounting" value={this.state.nextEstateCost}/>)
+                      <Col>
+                        (Cost: <UINumber type="accounting"
+                            value={this.state.nextEstateCost}/> )
                       </Col>
                     </Row>
                   </Button>
